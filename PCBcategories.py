@@ -71,8 +71,8 @@ class addCategoryGui(QtGui.QDialog):
         for i in categories:
             self.parentCategory.addItem(i.name, i.id)
         
-        self.parentCategory.insertItem(-1, '', 0)
-        self.parentCategory.setCurrentIndex(-1)
+        self.parentCategory.insertItem(-1, 'None', 0)
+        self.parentCategory.setCurrentIndex(0)
 
 
 class removeCategoryGui(QtGui.QMessageBox):
@@ -121,63 +121,9 @@ class updateCategoryGui(QtGui.QDialog):
         for i in categories:
             self.parentCategory.addItem(i.name, i.id)
         
-        self.parentCategory.insertItem(-1, '', 0)
+        self.parentCategory.insertItem(-1, 'None', 0)
         self.parentCategory.setCurrentIndex(self.parentCategory.findData(setInedx))
 
 #***********************************************************************
 #*                             CONSOLE
 #***********************************************************************
-def readCategories():
-    if __freecadSettings__.GetString("partsCategories", '') == '':
-        freecadAddParam()
-    #
-    return {int(i):j for i, j in json.loads(__freecadSettings__.GetString("partsCategories", '')).items()}
-    
-def writeCategories(data):
-    __freecadSettings__.SetString('partsCategories', json.dumps(data))
-
-def freecadAddParam():
-    writeCategories(modelsCategories)
-    
-def removeCategory(ID):
-    categories = readCategories()
-    try:
-        if int(ID) in categories.keys():
-            del categories[ID]
-            writeCategories(categories)
-    except:
-        pass
-        
-def getCategoryIdByName(categoryName):
-    modelCategory = -1
-    for j,k in readCategories().items():
-        if k[0] == categoryName:
-            modelCategory = int(j)
-            break
-            
-    return modelCategory
-    
-def updateCategory(ID, data):
-    '''
-        data = [Name, Description]
-    '''
-    categories = readCategories()
-    try:
-        categories[ID] = data
-        writeCategories(categories)
-    except:
-        pass
-
-def addCategory(name, description):
-    try:
-        updateCategory(newID(), [name, description])
-    except:
-        pass
-        
-    return 
-
-def newID():
-    return max(readCategories().keys()) + 1
-
-def readFromXML(data):
-    pass

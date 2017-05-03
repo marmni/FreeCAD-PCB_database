@@ -572,7 +572,7 @@ class modelSettingsTable(QtGui.QTableWidget):
         for i in range(self.rowCount(), -1, -1):
             self.removeRow(i)
     
-    def __str__(self):
+    def getData(self):
         soft = []
         for i in range(self.rowCount()):
             soft.append([
@@ -586,50 +586,65 @@ class modelSettingsTable(QtGui.QTableWidget):
                 float(self.item(i, 7).text())
             ])
         
-        return str(soft)
+        return soft
+    
+    def __str__(self):
+        return str(self.getData())
 
 
 class modelsList(QtGui.QTreeWidget):
     def __init__(self, parent=None):
         QtGui.QTreeWidget.__init__(self, parent)
         #
-        self.Sockets = []
+        self.sql = None
         #
         self.setColumnCount(2)
         self.setHeaderLabels([u"Name", u"Description"])
         self.setSortingEnabled(True)
         self.checkItems = True
-        
-    #def reloadSockets(self):
-        #self.Sockets = []
-        #self.sql.reloadList()
-        
-        #for i in self.sql.packages():
-            #dane = self.sql.getValues(i)
-            
-            #if bool(eval(dane["socket"])[0]) == True:
-                #self.Sockets.append(["{0}".format(dane["name"]), i])
     
+    def addNewModel(self, model):
+        mainItem = QtGui.QTreeWidgetItem([model.name, model.description])
+        mainItem.setData(0, QtCore.Qt.UserRole, model.id)
+        mainItem.setData(0, QtCore.Qt.UserRole + 1, "P")
+        if self.checkItems:
+            mainItem.setCheckState(0, QtCore.Qt.Unchecked)
+        
+        return mainItem
+
     def addNewItem(self, category):
         mainItem = QtGui.QTreeWidgetItem([category[0], category[1]['description']])
         mainItem.setData(0, QtCore.Qt.UserRole, category[1]['id'])
         mainItem.setData(0, QtCore.Qt.UserRole + 1, "C")
         mainItem.setIcon(0, QtGui.QIcon(QtGui.QPixmap(":/data/img/folder_open_22x22.png")))
         
+        # models
+        for i in self.sql.getAllModelsByCategory(category[1]['id']):
+            mainItem.addChild(self.addNewModel(i))
+        
+        # sub categories
         for i in category[1]['sub'].items():
             mainItem.addChild(self.addNewItem(i))
             
         return mainItem
     
-    def reloadList(self, categories):
+    def reloadList(self):
         ''' reload list of packages from current lib '''
+        if not self.sql:
+            return False
+        
         self.clear()
         
-        for i in categories.items():
-            wyn = self.addTopLevelItem(self.addNewItem(i))
-            
-            
+        # models withoud category
+        for i in self.sql.getAllModelsByCategory(0):
+            self.addTopLevelItem(self.addNewModel(i))
         
+        # main categories
+        for i in self.sql.getAllcategoriesWithSubCat(0).items():
+            self.addTopLevelItem(self.addNewItem(i))
+        
+        self.sortItems(0, QtCore.Qt.AscendingOrder)
+        #self.resizeColumnToContents(0)
         
         
         #self.clear()
@@ -679,6 +694,9 @@ class dodajElement(QtGui.QDialog):
         self.setWindowTitle(u"Assign models")
         self.setWindowIcon(QtGui.QIcon(":/data/img/uklad.png"))
         
+        self.elementID = None
+        self.szukaneFrazy = []
+        self.szukaneFrazyNr = 0
         self.sql = dataBase()
         self.sql.connect()
         
@@ -686,7 +704,8 @@ class dodajElement(QtGui.QDialog):
         # models list
         ########################
         self.modelsList = modelsList()
-        self.modelsList.reloadList(self.sql.getAllcategoriesWithSubCat(0))
+        self.modelsList.sql = self.sql
+        self.modelsList.reloadList()
         self.connect(self.modelsList, QtCore.SIGNAL("itemPressed (QTreeWidgetItem *,int)"), self.loadData)
         
         ##
@@ -709,66 +728,211 @@ class dodajElement(QtGui.QDialog):
         #
         self.reloadList()
     
-    def addPackageAsNew(self):
-        pass
-    
-    def addNewPackage(self):
-        pass
     
     def clearData(self):
         ''' clean form '''
-        tablica = {"id": None,
+        tablica = {"id": 0,
+                   "name" : "",
                    "description": "",
-                   "add_socket": '[False, None]',
-                   "name": '',
-                   "datasheet": "",
-                   "path": '',
-                   "soft": '[]',
-                   "socket": '[False, 0.0]',
-                   'category': '-1'}
+                   "categoryID" : 0,
+                   "datasheet" : "",
+                   "path3DModels" : "",
+                   "isSocket" : False,
+                   "isSocketHeight" : 0.0,
+                   "soketID" : 0,
+                   "soketIDSocket" : False,
+                   "software" : "[]"
+                }
         self.showData(tablica)
     
-    def showData(self, dane):
-        ''' load package info to form '''
-        self.modelSettings.clear()
-        #
-        self.elementID = dane["id"]
-        
-        self.packageName.setText(dane["name"])
-        self.pathToModel.setText(dane["path"])
-        self.modelDescription.setPlainText(dane["description"])
-        self.datasheetPath.setText(dane["datasheet"])
-        
+    def readFormData(self):
         try:
-            self.modelCategory.setCurrentIndex(self.modelCategory.findData(dane["category"]))
-        except:
-            self.modelCategory.setCurrentIndex(self.modelCategory.findData(-1))
-        
-        self.reloadSockets()
-        self.socketModelName.removeItem(self.socketModelName.findData(self.elementID))
-        add_socket = eval(dane["add_socket"])
-        if self.socketModelName.findData(add_socket[1]) != -1:
-            self.boxAddSocket.setChecked(add_socket[0])
-            self.socketModelName.setCurrentIndex(self.socketModelName.findData(add_socket[1]))
+            return {"name" : str(self.packageName.text()).strip(),
+                   "description": str(self.modelDescription.toPlainText()),
+                   "categoryID" : self.modelCategory.itemData(self.modelCategory.currentIndex(), QtCore.Qt.UserRole),
+                   "datasheet" : str(self.datasheetPath.text()).strip(),
+                   "path3DModels": str(self.pathToModel.text()).strip(),
+                   "isSocket" : self.boxSetAsSocketa.isChecked(),
+                   "isSocketHeight" : float(self.socketHeight.value()),
+                   "soketID" : self.socketModelName.itemData(self.socketModelName.currentIndex(), QtCore.Qt.UserRole),
+                   "soketIDSocket" : self.boxAddSocket.isChecked(),
+                   "software" : str(self.modelSettings)
+                   }
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("{0} \n".format(e))
+    
+    def addModelAsNew(self):
+        ''' add package as new - based on other package '''
+        if str(self.packageName.text()).strip() == "" or str(self.pathToModel.text()).strip() == "":
+            QtGui.QMessageBox().critical(self, u"Caution!", u"At least one required field is empty.")
+            return
+
+        zawiera = self.sql.getModelByName(str(self.packageName.text()).strip())
+        if zawiera[0]:
+            dial = QtGui.QMessageBox(self)
+            dial.setText(u"Rejected. Package already exist.")
+            dial.setWindowTitle("Caution!")
+            dial.setIcon(QtGui.QMessageBox.Warning)
+            dial.addButton('Ok', QtGui.QMessageBox.RejectRole)
+            dial.exec_()
         else:
-            self.boxAddSocket.setChecked(QtCore.Qt.Unchecked)
+            self.saveNewModel()
         
-        socket = eval(dane["socket"])
-        self.boxSetAsSocketa.setChecked(int(socket[0]))
-        self.socketHeight.setValue(socket[1])
+    def saveNewModel(self):
+        ''' add package info to lib '''
+        data = self.readFormData()
         
+        self.sql.addModel(data)
+        self.reloadList()
+        self.wyszukajObiekty(data["name"])
+        
+    def updateModel(self, elemID):
+        data = self.readFormData()
+        
+        self.sql.updateModel(elemID, data)
+        self.reloadList()
+        self.wyszukajObiekty(data["name"])
+    
+    def deleteModel(self):
+        ''' delete selected packages from lib '''
         try:
-            for i, j in eval(dane["adjust"]).items():
-                self.modelAdjust.updateType(i, j)
-        except:
-            self.modelAdjust.resetTable()
+            delAll = False
+            #
+            for i in QtGui.QTreeWidgetItemIterator(self.modelsList):
+                if str(i.value().data(0, QtCore.Qt.UserRole + 1)) == 'C':
+                    continue
+                if not i.value().checkState(0) == QtCore.Qt.Checked:
+                    continue
+                ##########
+                item = i.value()
+                objectID = str(item.data(0, QtCore.Qt.UserRole))
+                ##########
+                if not delAll:
+                    dial = QtGui.QMessageBox()
+                    dial.setText(u"Delete selected package {0}?".format(item.text(0)))
+                    dial.setWindowTitle("Caution!")
+                    dial.setIcon(QtGui.QMessageBox.Question)
+                    delete_YES = dial.addButton('Yes', QtGui.QMessageBox.YesRole)
+                    delete_YES_ALL = dial.addButton('Yes for all', QtGui.QMessageBox.YesRole)
+                    delete_NO = dial.addButton('No', QtGui.QMessageBox.RejectRole)
+                    delete_NO_ALL = dial.addButton('No for all', QtGui.QMessageBox.RejectRole)
+                    dial.exec_()
+                    
+                    if dial.clickedButton() == delete_NO_ALL:
+                        break
+                    elif dial.clickedButton() == delete_YES_ALL:
+                        delAll = True
+                    elif dial.clickedButton() == delete_NO:
+                        continue
+                #
+                self.sql.deleteModel(objectID)
+                item.setCheckState(0, QtCore.Qt.Unchecked)
+                item.setHidden(True)
+            ##########
+        except Exception ,e:
+            FreeCAD.Console.PrintWarning("Error1: {0} \n".format(e))
+
+    def addNewModel(self):
+        ''' add package to lib '''
+        #if str(self.packageName.text()).strip() == "" or str(self.pathToModel.text()).strip() == "":
+            #QtGui.QMessageBox().critical(self, u"Caution!", u"At least one required field is empty.")
+            #return
         
-        soft = eval(dane["soft"])
-        for i in soft:
-            try:
-                self.modelSettings.addRow(i)
-            except Exception, e:
-                FreeCAD.Console.PrintWarning("{0} \n".format(e))
+        zawiera = self.sql.getModelByName(str(self.packageName.text()).strip())
+        if not self.elementID and zawiera[0]:  # aktualizacja niezaznaczonego obiektu
+            dial = QtGui.QMessageBox(self)
+            dial.setText(u"Package already exist. Rewrite?")
+            dial.setWindowTitle("Caution!")
+            dial.setIcon(QtGui.QMessageBox.Question)
+            rewN = dial.addButton('No', QtGui.QMessageBox.RejectRole)
+            rewT = dial.addButton('Yes', QtGui.QMessageBox.YesRole)
+            dial.exec_()
+                
+            if dial.clickedButton() == rewN:
+                return
+            else:
+                self.updateModel(zawiera[1].id)
+                return
+        elif self.elementID:  # aktualizacja zaznaczonego obiektu
+            dial = QtGui.QMessageBox(self)
+            dial.setText(u"Save changes?")
+            dial.setWindowTitle("Caution!")
+            dial.setIcon(QtGui.QMessageBox.Question)
+            rewN = dial.addButton('No', QtGui.QMessageBox.RejectRole)
+            dial.addButton('Yes', QtGui.QMessageBox.YesRole)
+            dial.exec_()
+                
+            if dial.clickedButton() == rewN:
+                return
+            else:
+                #zawiera = self.sql.has_value("name", self.nazwaEagle.text())
+                if zawiera[0] and zawiera[1].id != self.elementID:
+                    dial = QtGui.QMessageBox(self)
+                    dial.setText(u"Rejected. Package already exist.")
+                    dial.setWindowTitle("Caution!")
+                    dial.setIcon(QtGui.QMessageBox.Warning)
+                    dial.addButton('Ok', QtGui.QMessageBox.RejectRole)
+                    dial.exec_()
+                else:
+                    if not self.sql.getModelByID(self.elementID)[0]:
+                        self.saveNewModel()
+                    else:
+                        self.updateModel(self.elementID)
+                return
+        else:  # dodanie nowego obiektu
+            self.saveNewModel()
+    
+    def showData(self, model):
+        ''' load package info to form '''
+        try:
+            self.modelSettings.clear()
+            #
+            self.elementID = model["id"]
+            self.packageName.setText(model["name"])
+            self.pathToModel.setText(model["path3DModels"])
+            self.modelDescription.setPlainText(model["description"])
+            self.datasheetPath.setText(model["datasheet"])
+            self.modelCategory.setCurrentIndex(self.modelCategory.findData(model["categoryID"]))
+            
+            # software
+            for i in eval(model["software"]):
+                try:
+                    self.modelSettings.addRow(i)
+                except Exception, e:
+                    FreeCAD.Console.PrintWarning("{0} \n".format(e))
+            
+            # sockets
+            
+            
+        except Exception, e:
+            FreeCAD.Console.PrintWarning(u"showData(): {0} \n".format(e))
+        
+        # sockets
+        #self.reloadSockets()
+        #self.socketModelName.removeItem(self.socketModelName.findData(self.elementID))
+        #add_socket = eval(dane["add_socket"])
+        #if self.socketModelName.findData(add_socket[1]) != -1:
+            #self.boxAddSocket.setChecked(add_socket[0])
+            #self.socketModelName.setCurrentIndex(self.socketModelName.findData(add_socket[1]))
+        #else:
+            #self.boxAddSocket.setChecked(QtCore.Qt.Unchecked)
+        
+        #socket = eval(dane["socket"])
+        #self.boxSetAsSocketa.setChecked(int(socket[0]))
+        #self.socketHeight.setValue(socket[1])
+        
+        #try:
+            #for i, j in eval(dane["adjust"]).items():
+                #self.modelAdjust.updateType(i, j)
+        #except:
+            #self.modelAdjust.resetTable()
+        
+        #soft = eval(dane["soft"])
+        #for i in soft:
+            #try:
+                #self.modelSettings.addRow(i)
+            #except Exception, e:
+                #FreeCAD.Console.PrintWarning("{0} \n".format(e))
         
     def resetSetAsSocket(self, value):
         if value:
@@ -860,10 +1024,10 @@ class dodajElement(QtGui.QDialog):
             description = str(dial.categoryDescription.toPlainText()).strip()
             
             if self.sql.updateCategory(ID, name, parentID, description):
-                self.modelsList.reloadList(self.sql.getAllcategoriesWithSubCat(0))
+                #self.modelsList.reloadList(self.sql.getAllcategoriesWithSubCat(0))
                 self.reloadList()
     
-    def addCategoryF(self):
+    def addCategory(self):
         dial = addCategoryGui()
         dial.loadCategories(self.sql.getAllcategories())
         
@@ -873,10 +1037,10 @@ class dodajElement(QtGui.QDialog):
                 return
             
             if self.sql.addCategory(str(dial.categoryName.text()).strip(), dial.parentCategory.itemData(dial.parentCategory.currentIndex()), str(dial.categoryDescription.toPlainText()).strip()):
-                self.modelsList.reloadList(self.sql.getAllcategoriesWithSubCat(0))
+                #self.modelsList.reloadList()
                 self.reloadList()
     
-    def removeCategoryF(self):
+    def deleteCategory(self):
         ID = int(self.modelsList.currentItem().data(0, QtCore.Qt.UserRole))
         
         dial = removeCategoryGui(self.modelsList.currentItem().text(0))
@@ -884,41 +1048,63 @@ class dodajElement(QtGui.QDialog):
         
         if dial.clickedButton() == dial.delete:
             if self.sql.deleteCategory(ID):
-                self.modelsList.reloadList(self.sql.getAllcategoriesWithSubCat(0))
+                #self.modelsList.reloadList(self.sql.getAllcategoriesWithSubCat(0))
                 self.reloadList()
         
     def loadData(self, item):
+        self.RightSide_tab.setCurrentIndex(0)
+        
         if str(self.modelsList.currentItem().data(0, QtCore.Qt.UserRole + 1)) == 'C':
+            self.clearData()
             self.editCategory.setDisabled(False)
             self.removeCategory.setDisabled(False)
+            self.removeModel.setDisabled(True)
         else:
             self.editCategory.setDisabled(True)
             self.removeCategory.setDisabled(True)
+            self.removeModel.setDisabled(False)
             #
-            elemID = str(self.modelsList.currentItem().data(0, QtCore.Qt.UserRole))
-            dane = self.sql.getValues(elemID)
-            dane["id"] = elemID
-    
+            dane = self.sql.getModelByID(self.modelsList.currentItem().data(0, QtCore.Qt.UserRole))
+            if dane[0]:
+                self.showData(self.sql.convertToTable(dane[1]))
+
     def reloadCategoryList(self):
+        currentIndex = self.modelCategory.currentIndex()
         self.modelCategory.clear()
         #
         for i in self.sql.getAllcategories():
             self.modelCategory.addItem("{0}".format(i.name))
             self.modelCategory.setItemData(self.modelCategory.count() - 1, i.id, QtCore.Qt.UserRole)
         
-        self.modelCategory.insertItem(-1, '', 0)
-        self.modelCategory.setCurrentIndex(-1)
+        self.modelCategory.insertItem(-1, 'None', 0)
+        if currentIndex and currentIndex >= 1:
+            self.modelCategory.setCurrentIndex(currentIndex)
+        else:
+            self.modelCategory.setCurrentIndex(0)
             
     def reloadList(self):
         ''' reload list of packages from current lib '''
         self.editCategory.setDisabled(True)
         self.removeCategory.setDisabled(True)
+        self.removeModel.setDisabled(True)
         
         try:
-            self.modelsList.reloadList(self.sql.getAllcategoriesWithSubCat(0))
+            try:
+                data = self.modelsList.currentItem().text(0)
+            except:
+                data = None
+            
+            self.modelsList.reloadList()
             self.reloadCategoryList()
+            #self.clearData()
+            
+            if data:
+                self.wyszukajObiekty(data)
         except Exception, e:
             FreeCAD.Console.PrintWarning(u"Error 6: {0} \n".format(e))
+            
+    def reloadSockets(self):
+        pass
         
     ##########################
     ##########################
@@ -1026,7 +1212,7 @@ class dodajElement(QtGui.QDialog):
         #########################
         saveModelSettings = QtGui.QPushButton("Save")
         saveModelSettings.setIcon(QtGui.QIcon(":/data/img/save_22x22.png"))
-        self.connect(saveModelSettings, QtCore.SIGNAL("clicked ()"), self.addNewPackage)
+        self.connect(saveModelSettings, QtCore.SIGNAL("clicked ()"), self.addNewModel)
         
         cleanForm = QtGui.QPushButton("Clean/New")
         cleanForm.setIcon(QtGui.QIcon(":/data/img/clear_16x16.png"))
@@ -1034,7 +1220,7 @@ class dodajElement(QtGui.QDialog):
         
         saveAsModelSettings = QtGui.QPushButton("Save As New")
         saveAsModelSettings.setIcon(QtGui.QIcon(":/data/img/save_22x22.png"))
-        self.connect(saveAsModelSettings, QtCore.SIGNAL("clicked ()"), self.addPackageAsNew)
+        self.connect(saveAsModelSettings, QtCore.SIGNAL("clicked ()"), self.addModelAsNew)
         
         closeDialog = QtGui.QPushButton("Close")
         self.connect(closeDialog, QtCore.SIGNAL("clicked ()"), self, QtCore.SLOT('close()'))
@@ -1129,9 +1315,9 @@ class dodajElement(QtGui.QDialog):
         # rightSide_Main
         rightSide_Main = QtGui.QWidget()
         layRightSide_Main = QtGui.QGridLayout(rightSide_Main)
-        layRightSide_Main.addWidget(QtGui.QLabel(u"Package type"), 0, 0, 1, 1)
+        layRightSide_Main.addWidget(QtGui.QLabel(u"Model name*"), 0, 0, 1, 1)
         layRightSide_Main.addWidget(self.packageName, 0, 1, 1, 2)
-        layRightSide_Main.addWidget(QtGui.QLabel(u"Path to element"), 2, 0, 1, 1)
+        layRightSide_Main.addWidget(QtGui.QLabel(u"Path to element*"), 2, 0, 1, 1)
         layRightSide_Main.addWidget(self.pathToModel, 2, 1, 1, 1)
         layRightSide_Main.addWidget(pathToModelInfo, 2, 2, 1, 1)
         layRightSide_Main.addWidget(QtGui.QLabel(u"Datasheet"), 3, 0, 1, 1)
@@ -1195,6 +1381,13 @@ class dodajElement(QtGui.QDialog):
         modelsListReload.setFlat(True)
         self.connect(modelsListReload, QtCore.SIGNAL("clicked ()"), self.reloadList)
         
+        self.removeModel = QtGui.QPushButton("")
+        self.removeModel.setIcon(QtGui.QIcon(":/data/img/databaseDelete.png"))
+        self.removeModel.setToolTip(u"Delete selected model from database")
+        self.removeModel.setFlat(True)
+        self.removeModel.setDisabled(True)
+        self.connect(self.removeModel, QtCore.SIGNAL("clicked ()"), self.deleteModel)
+        
         ########################
         # categories
         ########################
@@ -1205,18 +1398,18 @@ class dodajElement(QtGui.QDialog):
         self.editCategory.setDisabled(True)
         self.connect(self.editCategory, QtCore.SIGNAL("clicked ()"), self.editCategoryF)
         
-        addCategory = QtGui.QPushButton("")
-        addCategory.setIcon(QtGui.QIcon(":/data/img/add_16x16.png"))
-        addCategory.setToolTip(u"Add new category")
-        addCategory.setFlat(True)
-        self.connect(addCategory, QtCore.SIGNAL("clicked ()"), self.addCategoryF)
+        addCategoryButton = QtGui.QPushButton("")
+        addCategoryButton.setIcon(QtGui.QIcon(":/data/img/add_16x16.png"))
+        addCategoryButton.setToolTip(u"Add new category")
+        addCategoryButton.setFlat(True)
+        self.connect(addCategoryButton, QtCore.SIGNAL("clicked ()"), self.addCategory)
         
         self.removeCategory = QtGui.QPushButton("")
         self.removeCategory.setIcon(QtGui.QIcon(":/data/img/delete_16x16.png"))
         self.removeCategory.setToolTip(u"Remove category")
         self.removeCategory.setFlat(True)
         self.removeCategory.setDisabled(True)
-        self.connect(self.removeCategory, QtCore.SIGNAL("clicked ()"), self.removeCategoryF)
+        self.connect(self.removeCategory, QtCore.SIGNAL("clicked ()"), self.deleteCategory)
         ##
         mainLayLeftSide = QtGui.QVBoxLayout()
         mainLayLeftSide.addWidget(modelsListExpand)
@@ -1224,8 +1417,10 @@ class dodajElement(QtGui.QDialog):
         mainLayLeftSide.addWidget(separator())
         mainLayLeftSide.addWidget(modelsListReload)
         mainLayLeftSide.addWidget(separator())
+        mainLayLeftSide.addWidget(self.removeModel)
+        mainLayLeftSide.addWidget(separator())
         mainLayLeftSide.addWidget(self.editCategory)
-        mainLayLeftSide.addWidget(addCategory)
+        mainLayLeftSide.addWidget(addCategoryButton)
         mainLayLeftSide.addWidget(self.removeCategory)
         mainLayLeftSide.addStretch(10)
         mainLayLeftSide.setContentsMargins(0, 0, 0, 0)

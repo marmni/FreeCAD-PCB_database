@@ -24,16 +24,21 @@
 #*   USA                                                                    *
 #*                                                                          *
 #****************************************************************************
-
+import os.path
+import shutil
+import ConfigParser
+import json
+from PySide import QtCore, QtGui
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, Boolean, Float
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.engine import reflection
 
 import FreeCAD
 from PCBfunctions import getFromSettings_databasePath
 
-
+__currentPath__ = os.path.abspath(os.path.join(os.path.dirname(__file__), ''))
 Base = declarative_base()
 
 class Categories(Base):
@@ -51,18 +56,180 @@ class Categories(Base):
     
     def __repr__(self):
         return "<Categories('%s','%s')>" % (self.name, self.description)
+        
+
+class Models(Base):
+    __tablename__ = "models"
+    
+    id = Column(Integer, primary_key=True)
+    name = Column(String, unique=True, nullable=False)
+    description = Column(String)
+    categoryID = Column(Integer)
+    datasheet = Column(String)
+    path3DModels = Column(String, nullable=False)
+    isSocket = Column(Boolean)
+    isSocketHeight = Column(Float)
+    soketID = Column(Integer)
+    soketIDSocket = Column(Boolean)
+    software = Column(String)
+
+    def __init__(self, name, path3DModels, description='', categoryID=0, datasheet='', isSocket=False, isSocketHeight=0.0, soketID=0, soketIDSocket=False, software=''):
+        self.name = name
+        self.description = description
+        self.categoryID = categoryID
+        self.datasheet = datasheet
+        self.path3DModels = path3DModels
+        self.isSocket = isSocket
+        self.isSocketHeight = isSocketHeight
+        self.soketID = soketID
+        self.soketIDSocket = soketIDSocket
+        self.software = software
+    
+    def __repr__(self):
+        return "<Models('%s','%s')>" % (self.name, self.description)
+
+
+class dataBase_CFG():
+    def __init__(self, parent=None):
+        self.config = ConfigParser.RawConfigParser()
+        self.fileName = None
+    
+    def read(self, fileName):
+        if fileName != "":
+            #self.config = ConfigParser.RawConfigParser()
+            sciezka = os.path.dirname(fileName)
+            if os.access(sciezka, os.R_OK) and os.access(sciezka, os.F_OK):
+                self.fileName = fileName
+                self.config.read(fileName)
+                return True
+            FreeCAD.Console.PrintWarning("Access Denied. The file '{0}' may not exist, or there could be permission problem.\n".format(fileName))
+    
+    def packages(self):
+        return self.config.sections()
+        
+    def getValues(self, sectionName):
+        dane = {}
+        for i in self.config.items(sectionName):
+            dane[i[0]] = i[1]
+        return dane
+    
+    def readCategories(self):
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", '').strip() != '':
+            return {int(i):j for i, j in json.loads(FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", '')).items()}
+        else:
+            return {}
 
 
 class dataBase:
     def __init__(self):
         self.session = None
         
+    def  checkVersion(self):
+        '''  '''
+        oldDB = getFromSettings_databasePath().replace(".db", ".cfg")
+        
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", "").strip() != '':
+            oldCategories = True
+        else:
+            oldCategories = False
+        
+        if os.path.isfile(oldDB) and oldCategories:
+            dial = QtGui.QMessageBox()
+            dial.setText(u"Old database format detected - upgrading database format is required. This may take several seconds.")
+            dial.setWindowTitle("Caution!")
+            dial.setIcon(QtGui.QMessageBox.Question)
+            rewT = dial.addButton('Ok', QtGui.QMessageBox.YesRole)
+            dial.exec_()
+            
+            return False
+        else:
+            return True
+    
+    def cfg2db(self):
+        ''' convert from cfg to db format - local '''
+        try:
+            dataBaseCFG = dataBase_CFG()  # old cfg file
+            dataBaseCFG.read(getFromSettings_databasePath().replace(".db", ".cfg"))
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0}.\n".format(self.errorsDescription(e)))
+            return False
+        else:
+            FreeCAD.Console.PrintWarning("Reading old database\n")
+        
+        # converting categories
+        categoriesList = dataBaseCFG.readCategories()
+        for i, j in categoriesList.items():
+            name = self.clearString(j[0])
+            description = self.clearString(j[1])
+            
+            self.addCategory(name, 0, description)
+        
+        # converting models
+        seketsList = []
+        packagesList = dataBaseCFG.packages()
+        
+        for i in packagesList:
+            data = dataBaseCFG.getValues(i)
+            
+            result = {}
+            result["name"] = self.clearString(data["name"])
+            result["datasheet"] = self.clearString(data["datasheet"])
+            result["description"] = self.clearString(data["description"])
+            result["path3DModels"] = self.clearString(data["path"])
+            result["isSocket"] = eval(self.clearString(data["socket"]))[0]
+            result["isSocketHeight"] = float(eval(self.clearString(data["socket"]))[1])
+            result["soketIDSocket"] = eval(self.clearString(data["add_socket"]))[0]
+            result["software"] = self.clearString(data["soft"])
+            
+            categoryID = int(data["category"])
+            if categoryID in [-1, 0]:
+                result["categoryID"] = 0
+            else:
+                category = self.getCategoryByName(categoriesList[categoryID][0])
+                if category[0]:
+                    result["categoryID"] = category[1].id
+                else:
+                    result["categoryID"] = 0
+            
+            if result["soketIDSocket"]:
+                result["soketID"] = 0
+                seketsList.append([result["name"], dataBaseCFG.getValues(result["soketIDSocket"])["name"]])
+            else:
+                result["soketID"] = 0
+                
+            self.addModel(result)
+        
+        for i in seketsList:
+            soket = self.getModelByName(i[1])
+            if soket[0]:
+                self.session.query(Models).filter(Models.name == i[0]).update({"soketID" : socket[1].id})
+
+        self.session.commit()
+        FreeCAD.Console.PrintWarning("DONE!.\n")
+        
+        # database file update - position/name
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("databasePath", "").strip() != '':
+            FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('databasePath', json.dumps(data.replace(".cfg", ".db")))
+        
+        data = getFromSettings_databasePath()
+        shutil.move(data.replace(".db", ".cfg"), data.replace(".db", ".cfg") + "_old")
+        
+        # deleting old categories
+        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", '').strip() != '':
+            FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('partsCategories', json.dumps(""))
+        
+        return True
+        
     def connect(self):
+        ''' '''
         try:
             engine = create_engine('sqlite:///{0}'.format(getFromSettings_databasePath()))  # relative path
             Base.metadata.create_all(engine)
             Session = sessionmaker(bind=engine)
             self.session = Session()
+            
+            if not self.checkVersion() and not self.cfg2db():
+                raise ConvertError()
             
             FreeCAD.Console.PrintWarning("Read database\n")
         except Exception, e:
@@ -84,16 +251,151 @@ class dataBase:
             encodable = encodable.replace("\x00", replacement)
 
         #return "\"" + encodable.replace("\"", "\"\"") + "\""
-        return encodable
+        return encodable.strip()
     
     def errorsDescription(self, error):
         if "IntegrityError" in str(error):
             return 'UNIQUE constraint failed.'
         elif "OperationalError" in str(error):
             return 'Database is locked.'
+        elif "MandatoryError" in str(error):
+            return "One of the mandatory fields is empty!"
+        elif "ConvertError()" in str(error):
+            return "Problems with converting database"
         else:
             return e.message
+    
+    def convertToTable(self, data):
+        result = {}
+        
+        for i, j in data.__dict__.items():
+            if not i.startswith("_sa_"):
+                result[i] = j
+        return result
+
+    def getAllModelsByCategory(self, categoryID):
+        return self.session.query(Models).filter(Models.categoryID == categoryID)
+    
+    def getModelByID(self, param):
+        try:
+            query = self.session.query(Models).filter(Models.id == int(param))
+            if query.count() == 0:
+                return [False]
             
+            return [True, query[0]]
+            
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0} (get model).\n".format(self.errorsDescription(e)))
+            return [False]
+    
+    def getModelByName(self, param):
+        try:
+            query = self.session.query(Models).filter(Models.name == self.clearString(param))
+            if query.count() == 0:
+                return [False]
+            
+            return [True, query[0]]
+            
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0} (get model).\n".format(self.errorsDescription(e)))
+            return [False]
+    
+    def deleteModel(self, modelID):
+        try:
+            modelID = int(modelID)
+            
+            self.session.query(Models).filter(Models.sockedID == modelID).update({"sockedID" : 0, "soketIDSocket" : False})
+            
+            self.session.query(Models).filter(Models.id == modelID).delete()
+            self.session.commit()
+        except Exception ,e:
+            self.session.rollback()
+            FreeCAD.Console.PrintWarning("ERROR: {0} (delete model).\n".format(self.errorsDescription(e)))
+            return False
+        else:
+            FreeCAD.Console.PrintWarning("Model was deleted.\n")
+            return True
+    
+    def addModel(self, data):
+        try:
+            name = self.clearString(data["name"])
+            description = self.clearString(data["description"])
+            categoryID = int(data["categoryID"])
+            datasheet = self.clearString(data["datasheet"])
+            path3DModels = self.clearString(data["path3DModels"])
+            isSocket = data["isSocket"]
+            isSocketHeight = float(data["isSocketHeight"])
+
+            try:
+                soketID = int(data["soketID"])
+            except:
+                soketID = 0
+                
+            soketIDSocket = data["soketIDSocket"]
+            software = self.clearString(data["software"])
+            
+            if name == '' or path3DModels == '':
+                raise MandatoryError()
+
+            model = Models(name, path3DModels, description, categoryID, datasheet, isSocket, isSocketHeight, soketID, soketIDSocket, software)
+            self.session.add(model)
+            self.session.commit()
+        except Exception, e:
+            self.session.rollback()
+            FreeCAD.Console.PrintWarning("ERROR: {0} (add new model).\n".format(self.errorsDescription(e)))
+            return False
+        else:
+            FreeCAD.Console.PrintWarning("Model {0} was added.\n".format(name))
+            return True
+    
+    def updateModel(self, modelID, data):
+        try:
+            name = self.clearString(data["name"])
+            path3DModels = self.clearString(data["path3DModels"])
+            modelID = int(modelID)
+
+            try:
+                soketID = int(data["soketID"])
+            except:
+                soketID = 0
+            
+            if name == '' or path3DModels == '' or modelID <= 0:
+                raise MandatoryError()
+            
+            self.session.query(Models).filter(Models.id == modelID).update({
+                    "name": name,
+                    "description" : self.clearString(data["description"]),
+                    "categoryID" : int(data["categoryID"]),
+                    "datasheet": self.clearString(data["datasheet"]),
+                    "path3DModels" : path3DModels,
+                    "isSocket" : data["isSocket"],
+                    "isSocketHeight" : float(data["isSocketHeight"]),
+                    "soketID" : soketID,
+                    "soketIDSocket" : data["soketIDSocket"],
+                    "software" : self.clearString(data["software"])
+            })
+
+            self.session.commit()
+        except Exception, e:
+            self.session.rollback()
+            FreeCAD.Console.PrintWarning("ERROR: {0} (update model).\n".format(self.errorsDescription(e)))
+            return False
+        else:
+            FreeCAD.Console.PrintWarning("Model {0} was updated.\n".format(name))
+            return True
+    
+    def getCategoryByName(self, param):
+        try:
+            query = self.session.query(Categories).filter(Categories.name == self.clearString(param))
+            if query.count() == 0:
+                return [False]
+            
+            return [True, query[0]]
+            
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0} (get category).\n".format(self.errorsDescription(e)))
+            return [False]
+    
     def getCategoryByID(self, catID=0):
         if catID <= 0:
             return False
@@ -102,7 +404,7 @@ class dataBase:
         
         if query.count() == 0:
             FreeCAD.Console.PrintWarning("ERROR: Category does not exist.\n")
-            return Fasle
+            return False
         
         return query[0]
         
@@ -130,6 +432,8 @@ class dataBase:
             parentID = categoryData.parentID
             
             self.session.query(Categories).filter(Categories.parentID == categoryID).update({"parentID" : parentID})
+            self.session.query(Models).filter(Models.categoryID == categoryID).update({"categoryID" : parentID})
+            
             self.session.query(Categories).filter(Categories.id == categoryID).delete()
             self.session.commit()
         except Exception, e:
@@ -150,6 +454,9 @@ class dataBase:
             parentID = int(parentID)
             description = self.clearString(description)
             
+            if name == '' or categoryID <= 0:
+                raise MandatoryError()
+            
             self.session.query(Categories).filter(Categories.id == categoryID).update({"name": name, "parentID" : parentID, "description" : description})
             self.session.commit()
         except Exception, e:
@@ -168,6 +475,9 @@ class dataBase:
                 parentID = 0
             parentID = int(parentID)
             description = self.clearString(description)
+            
+            if name == '':
+                raise MandatoryError()
             
             categories = Categories(name, parentID, description)
             self.session.add(categories)
