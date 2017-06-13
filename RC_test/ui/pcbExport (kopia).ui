@@ -1,0 +1,314 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>492</width>
+    <height>464</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Export board</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout_9">
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Eagle</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout">
+      <item>
+       <layout class="QGridLayout" name="gridLayout_4">
+        <item row="0" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_1">
+          <property name="text">
+           <string>Annotations</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportAnno_eagle</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_2">
+          <property name="text">
+           <string>Dimensions</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportDim_eagle</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_3">
+          <property name="text">
+           <string>Holes</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportHol_eagle</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>KiCad</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_4">
+      <item>
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="1" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_5">
+          <property name="text">
+           <string>Dimensions</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportDim_kicad</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_4">
+          <property name="text">
+           <string>Annotations</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportAnno_kicad</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_6">
+          <property name="text">
+           <string>Holes</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportHol_kicad</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="title">
+      <string>FidoCadJ</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_8">
+      <item>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_7">
+          <property name="text">
+           <string>Annotations</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportAnno_fidocadj</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_9">
+          <property name="text">
+           <string>Holes</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportHol_fidocadj</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>gEDA</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_6">
+      <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="0" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_10">
+          <property name="text">
+           <string>Annotations</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportAnno_geda</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_11">
+          <property name="text">
+           <string>Holes</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportHol_geda</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="title">
+      <string>Razen</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QGridLayout" name="gridLayout_5">
+        <item row="0" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_12">
+          <property name="text">
+           <string>Annotations</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportAnno_razen</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="1">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_13">
+          <property name="text">
+           <string>Holes</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>exportHol_razen</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+     <zorder>layoutWidget</zorder>
+     <zorder>gui::prefcheckbox_11</zorder>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Gui::PrefCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>Gui/PrefWidgets.h</header>
+  </customwidget>
+ </customwidgets>
+ <tabstops>
+  <tabstop>gui::prefcheckbox_1</tabstop>
+  <tabstop>gui::prefcheckbox_3</tabstop>
+  <tabstop>gui::prefcheckbox_2</tabstop>
+  <tabstop>gui::prefcheckbox_4</tabstop>
+  <tabstop>gui::prefcheckbox_6</tabstop>
+  <tabstop>gui::prefcheckbox_5</tabstop>
+  <tabstop>gui::prefcheckbox_7</tabstop>
+  <tabstop>gui::prefcheckbox_9</tabstop>
+  <tabstop>gui::prefcheckbox_10</tabstop>
+  <tabstop>gui::prefcheckbox_11</tabstop>
+  <tabstop>gui::prefcheckbox_12</tabstop>
+  <tabstop>gui::prefcheckbox_13</tabstop>
+ </tabstops>
+ <resources/>
+ <connections/>
+</ui>

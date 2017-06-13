@@ -33,8 +33,8 @@ import sys
 #
 from PCBdataBase import dataBase
 from PCBconf import supSoftware, defSoftware, partPaths
-from PCBfunctions import getFromSettings_databasePath, kolorWarstwy
-from PCBcategories import readCategories, addCategoryGui, removeCategoryGui, updateCategoryGui
+from PCBfunctions import getFromSettings_databasePath, kolorWarstwy, prepareScriptCopy
+from PCBcategories import addCategoryGui, removeCategoryGui, updateCategoryGui, setOneCategoryGui
 from PCBpartManaging import partExistPath
 
 __currentPath__ = os.path.dirname(os.path.abspath(__file__))
@@ -442,14 +442,15 @@ class modelSettingsTable(QtGui.QTableWidget):
     def __init__(self, parent=None):
         QtGui.QTableWidget.__init__(self, parent)
         
-        self.setColumnCount(8)
-        self.setHorizontalHeaderLabels([u"Package name", u"Software", "X", "Y", "Z", "RX", "RY", "RZ"])
+        self.setColumnCount(9)
+        self.setHorizontalHeaderLabels([u"ID", u"Package name", u"Software", "X", "Y", "Z", "RX", "RY", "RZ"])
         self.setSortingEnabled(False)
         self.horizontalHeader().setStretchLastSection(True)
         self.verticalHeader().hide()
         self.setGridStyle(QtCore.Qt.PenStyle(QtCore.Qt.DashLine))
         self.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
+        self.hideColumn(0)
         self.setStyleSheet('''
                 border: 1px solid #808080;
             ''')
@@ -483,13 +484,13 @@ class modelSettingsTable(QtGui.QTableWidget):
         if row != -1:
             dial = addModelDialog(0)
             #dial.packageName.setText(self.item(row, 0).text())
-            dial.supSoftware.setCurrentIndex(dial.supSoftware.findText(self.item(row, 1).text(), QtCore.Qt.MatchExactly))
-            dial.pozX.setValue(float(self.item(row, 2).text()))
-            dial.pozY.setValue(float(self.item(row, 3).text()))
-            dial.pozZ.setValue(float(self.item(row, 4).text()))
-            dial.pozRX.setValue(float(self.item(row, 5).text()))
-            dial.pozRY.setValue(float(self.item(row, 6).text()))
-            dial.pozRZ.setValue(float(self.item(row, 7).text()))
+            dial.supSoftware.setCurrentIndex(dial.supSoftware.findText(self.item(row, 2).text(), QtCore.Qt.MatchExactly))
+            dial.pozX.setValue(float(self.item(row, 3).text()))
+            dial.pozY.setValue(float(self.item(row, 4).text()))
+            dial.pozZ.setValue(float(self.item(row, 5).text()))
+            dial.pozRX.setValue(float(self.item(row, 6).text()))
+            dial.pozRY.setValue(float(self.item(row, 7).text()))
+            dial.pozRZ.setValue(float(self.item(row, 8).text()))
             
             if dial.exec_():
                 item = self.findItems(str(dial.supSoftware.currentText()), QtCore.Qt.MatchExactly)
@@ -498,17 +499,19 @@ class modelSettingsTable(QtGui.QTableWidget):
                     if str(dial.packageName.text()) == str(self.item(self.row(i), 0).text()):
                         FreeCAD.Console.PrintWarning("Part already exist.\n")
                         return False
-                ##
-                self.insertRow(self.rowCount())
+                #
+                data = {}
+                data['id'] = -1
+                data['name'] = dial.packageName.text().strip()
+                data['software'] = dial.supSoftware.currentText()
+                data['x'] = dial.pozX.value()
+                data['y'] = dial.pozY.value()
+                data['z'] = dial.pozZ.value()
+                data['rx'] = dial.pozRX.value()
+                data['ry'] = dial.pozRY.value()
+                data['rz'] = dial.pozRZ.value()
                 
-                self.addNewModelCell(dial.packageName.text().strip(), 0)
-                self.addNewModelCell(dial.supSoftware.currentText(), 1)
-                self.addNewModelCell(dial.pozX.value(), 2)
-                self.addNewModelCell(dial.pozY.value(), 3)
-                self.addNewModelCell(dial.pozZ.value(), 4)
-                self.addNewModelCell(dial.pozRX.value(), 5)
-                self.addNewModelCell(dial.pozRY.value(), 6)
-                self.addNewModelCell(dial.pozRZ.value(), 7)
+                self.addRows([data])
 
     def addNewModel(self):
         dial = addModelDialog(0)
@@ -519,75 +522,88 @@ class modelSettingsTable(QtGui.QTableWidget):
                 if str(dial.packageName.text()) == str(self.item(self.row(i), 0).text()):
                     FreeCAD.Console.PrintWarning("Part already exist.\n")
                     return False
-            ##
-            self.insertRow(self.rowCount())
+            #
+            data = {}
+            data['id'] = -1
+            data['name'] = dial.packageName.text().strip()
+            data['software'] = dial.supSoftware.currentText()
+            data['x'] = dial.pozX.value()
+            data['y'] = dial.pozY.value()
+            data['z'] = dial.pozZ.value()
+            data['rx'] = dial.pozRX.value()
+            data['ry'] = dial.pozRY.value()
+            data['rz'] = dial.pozRZ.value()
             
-            self.addNewModelCell(dial.packageName.text().strip(), 0)
-            self.addNewModelCell(dial.supSoftware.currentText(), 1)
-            self.addNewModelCell(dial.pozX.value(), 2)
-            self.addNewModelCell(dial.pozY.value(), 3)
-            self.addNewModelCell(dial.pozZ.value(), 4)
-            self.addNewModelCell(dial.pozRX.value(), 5)
-            self.addNewModelCell(dial.pozRY.value(), 6)
-            self.addNewModelCell(dial.pozRZ.value(), 7)
+            self.addRows([data])
                 
     def deleteRow(self, row):
-        self.removeRow(row)
+        #self.removeRow(row)
+        self.hideRow(int(row))
 
     def editRow(self, row):
         dial = addModelDialog(1)
         
-        dial.packageName.setText(self.item(row, 0).text())
-        dial.supSoftware.setCurrentIndex(dial.supSoftware.findText(self.item(row, 1).text(), QtCore.Qt.MatchExactly))
-        dial.pozX.setValue(float(self.item(row, 2).text()))
-        dial.pozY.setValue(float(self.item(row, 3).text()))
-        dial.pozZ.setValue(float(self.item(row, 4).text()))
-        dial.pozRX.setValue(float(self.item(row, 5).text()))
-        dial.pozRY.setValue(float(self.item(row, 6).text()))
-        dial.pozRZ.setValue(float(self.item(row, 7).text()))
+        dial.packageName.setText(self.item(row, 1).text())
+        dial.supSoftware.setCurrentIndex(dial.supSoftware.findText(self.item(row, 2).text(), QtCore.Qt.MatchExactly))
+        dial.pozX.setValue(float(self.item(row, 3).text()))
+        dial.pozY.setValue(float(self.item(row, 4).text()))
+        dial.pozZ.setValue(float(self.item(row, 5).text()))
+        dial.pozRX.setValue(float(self.item(row, 6).text()))
+        dial.pozRY.setValue(float(self.item(row, 7).text()))
+        dial.pozRZ.setValue(float(self.item(row, 8).text()))
         
         if dial.exec_():
-            self.item(row, 0).setText(dial.packageName.text().strip())
-            self.item(row, 1).setText(dial.supSoftware.currentText())
-            self.item(row, 2).setText(str(dial.pozX.value()))
-            self.item(row, 3).setText(str(dial.pozY.value()))
-            self.item(row, 4).setText(str(dial.pozZ.value()))
-            self.item(row, 5).setText(str(dial.pozRX.value()))
-            self.item(row, 6).setText(str(dial.pozRY.value()))
-            self.item(row, 7).setText(str(dial.pozRZ.value()))
+            self.item(row, 1).setText(dial.packageName.text().strip())
+            self.item(row, 2).setText(dial.supSoftware.currentText())
+            self.item(row, 3).setText(str(dial.pozX.value()))
+            self.item(row, 4).setText(str(dial.pozY.value()))
+            self.item(row, 5).setText(str(dial.pozZ.value()))
+            self.item(row, 6).setText(str(dial.pozRX.value()))
+            self.item(row, 7).setText(str(dial.pozRY.value()))
+            self.item(row, 8).setText(str(dial.pozRZ.value()))
     
-    def addRow(self, i):
-        self.insertRow(self.rowCount())
+    def addRows(self, data):
+        ''' '''
+        for i in data:
+            self.insertRow(self.rowCount())
             
-        self.addNewModelCell(i[0], 0)
-        self.addNewModelCell(i[1], 1)
-        self.addNewModelCell(i[2], 2)
-        self.addNewModelCell(i[3], 3)
-        self.addNewModelCell(i[4], 4)
-        self.addNewModelCell(i[5], 5)
-        self.addNewModelCell(i[6], 6)
-        self.addNewModelCell(i[7], 7)
-    
+            self.addNewModelCell(i['id'], 0)
+            self.addNewModelCell(i['name'], 1)
+            self.addNewModelCell(i['software'], 2)
+            self.addNewModelCell(i['x'], 3)
+            self.addNewModelCell(i['y'], 4)
+            self.addNewModelCell(i['z'], 5)
+            self.addNewModelCell(i['rx'], 6)
+            self.addNewModelCell(i['ry'], 7)
+            self.addNewModelCell(i['rz'], 8)
+        
     def clear(self):
         for i in range(self.rowCount(), -1, -1):
             self.removeRow(i)
     
     def getData(self):
-        soft = []
-        for i in range(self.rowCount()):
-            soft.append([
-                u"{0}".format(self.item(i, 0).text()),
-                self.item(i, 1).text(),
-                float(self.item(i, 2).text()),
-                float(self.item(i, 3).text()),
-                float(self.item(i, 4).text()),
-                float(self.item(i, 5).text()),
-                float(self.item(i, 6).text()),
-                float(self.item(i, 7).text())
-            ])
+        result = []
         
-        return soft
-    
+        for i in range(self.rowCount()):
+            data = {}
+            try:
+                data['id'] = int(self.item(i, 0).text())
+            except:
+                data['id'] = -1
+            data['name'] = u"{0}".format(self.item(i, 1).text())
+            data['software'] = self.item(i, 2).text()
+            data['x'] = float(self.item(i, 3).text())
+            data['y'] = float(self.item(i, 4).text())
+            data['z'] = float(self.item(i, 5).text())
+            data['rx'] = float(self.item(i, 6).text())
+            data['ry'] = float(self.item(i, 7).text())
+            data['rz'] = float(self.item(i, 8).text())
+            data['blanked'] = self.isRowHidden(i)
+            
+            result.append(data)
+        
+        return  result
+
     def __str__(self):
         return str(self.getData())
 
@@ -645,38 +661,6 @@ class modelsList(QtGui.QTreeWidget):
         
         self.sortItems(0, QtCore.Qt.AscendingOrder)
         #self.resizeColumnToContents(0)
-        
-        
-        #self.clear()
-        #categories = {}
-        
-        #for i, j in readCategories().items():
-            #mainItem = QtGui.QTreeWidgetItem([j[0], j[1]])
-            #mainItem.setData(0, QtCore.Qt.UserRole, i)
-            #mainItem.setData(0, QtCore.Qt.UserRole + 1, "C")
-            #self.addTopLevelItem(mainItem)
-            
-            #categories[i] = mainItem
-        
-        #for i in self.sql.packages():
-            #dane = self.sql.getValues(i)
-            
-            #mainItem = QtGui.QTreeWidgetItem([dane["name"], dane["description"]])
-            #mainItem.setData(0, QtCore.Qt.UserRole, i)
-            #mainItem.setData(0, QtCore.Qt.UserRole + 1, "P")
-            #if self.checkItems:
-                #mainItem.setCheckState(0, QtCore.Qt.Unchecked)
-
-            #try:
-                #categories[int(dane["category"])].addChild(mainItem)
-            #except:
-                #self.addTopLevelItem(mainItem)
-            
-            #if bool(eval(dane["socket"])[0]) == True:
-                #self.Sockets.append(["{0}".format(dane["name"]), i])
-        
-        #self.sortItems(0, QtCore.Qt.AscendingOrder)
-        #self.resizeColumnToContents(0)
 
 
 class separator(QtGui.QFrame):
@@ -728,7 +712,10 @@ class dodajElement(QtGui.QDialog):
         #
         self.reloadList()
     
-    
+    def prepareCopy(self):
+        dial = prepareScriptCopy()
+        dial.exec_()
+
     def clearData(self):
         ''' clean form '''
         tablica = {"id": 0,
@@ -739,9 +726,9 @@ class dodajElement(QtGui.QDialog):
                    "path3DModels" : "",
                    "isSocket" : False,
                    "isSocketHeight" : 0.0,
-                   "soketID" : 0,
-                   "soketIDSocket" : False,
-                   "software" : "[]"
+                   "socketID" : 0,
+                   "socketIDSocket" : False,
+                   "software" : []
                 }
         self.showData(tablica)
     
@@ -754,9 +741,9 @@ class dodajElement(QtGui.QDialog):
                    "path3DModels": str(self.pathToModel.text()).strip(),
                    "isSocket" : self.boxSetAsSocketa.isChecked(),
                    "isSocketHeight" : float(self.socketHeight.value()),
-                   "soketID" : self.socketModelName.itemData(self.socketModelName.currentIndex(), QtCore.Qt.UserRole),
-                   "soketIDSocket" : self.boxAddSocket.isChecked(),
-                   "software" : str(self.modelSettings)
+                   "socketID" : self.socketModelName.itemData(self.socketModelName.currentIndex(), QtCore.Qt.UserRole),
+                   "socketIDSocket" : self.boxAddSocket.isChecked(),
+                   "software" : self.modelSettings.getData()
                    }
         except Exception, e:
             FreeCAD.Console.PrintWarning("{0} \n".format(e))
@@ -793,6 +780,30 @@ class dodajElement(QtGui.QDialog):
         self.reloadList()
         self.wyszukajObiekty(data["name"])
     
+    def setOneCategoryForModelsF(self):
+        ''' '''
+        try:
+            dial = setOneCategoryGui()
+            dial.loadCategories(self.sql.getAllcategories())
+            
+            if dial.exec_():
+                for i in QtGui.QTreeWidgetItemIterator(self.modelsList):
+                    if str(i.value().data(0, QtCore.Qt.UserRole + 1)) == 'C':
+                        continue
+                    if not i.value().checkState(0) == QtCore.Qt.Checked:
+                        continue
+                    #
+                    item = i.value()
+                    modelID = str(item.data(0, QtCore.Qt.UserRole))
+                    categoryID = dial.parentCategory.itemData(dial.parentCategory.currentIndex())
+                    
+                    self.sql.setCategoryForModel(modelID, categoryID)
+                    item.setCheckState(0, QtCore.Qt.Unchecked)
+                
+                self.reloadList()
+        except Exception ,e:
+            FreeCAD.Console.PrintWarning("Error1: {0} \n".format(e))
+
     def deleteModel(self):
         ''' delete selected packages from lib '''
         try:
@@ -885,41 +896,29 @@ class dodajElement(QtGui.QDialog):
     def showData(self, model):
         ''' load package info to form '''
         try:
-            self.modelSettings.clear()
-            #
             self.elementID = model["id"]
             self.packageName.setText(model["name"])
             self.pathToModel.setText(model["path3DModels"])
             self.modelDescription.setPlainText(model["description"])
             self.datasheetPath.setText(model["datasheet"])
             self.modelCategory.setCurrentIndex(self.modelCategory.findData(model["categoryID"]))
-            
             # software
-            for i in eval(model["software"]):
-                try:
-                    self.modelSettings.addRow(i)
-                except Exception, e:
-                    FreeCAD.Console.PrintWarning("{0} \n".format(e))
-            
+            self.modelSettings.clear()
+            self.modelSettings.addRows(model["software"])
             # sockets
+            self.reloadSockets()
+            self.socketModelName.removeItem(self.socketModelName.findData(self.elementID))
             
-            
+            if self.socketModelName.findData(model["socketID"]) != -1:
+                self.boxAddSocket.setChecked(model["socketIDSocket"])
+                self.socketModelName.setCurrentIndex(self.socketModelName.findData(model["socketID"]))
+            else:
+                self.boxAddSocket.setChecked(QtCore.Qt.Unchecked)
+            #
+            self.boxSetAsSocketa.setChecked(model["isSocket"])
+            self.socketHeight.setValue(model["isSocketHeight"])
         except Exception, e:
             FreeCAD.Console.PrintWarning(u"showData(): {0} \n".format(e))
-        
-        # sockets
-        #self.reloadSockets()
-        #self.socketModelName.removeItem(self.socketModelName.findData(self.elementID))
-        #add_socket = eval(dane["add_socket"])
-        #if self.socketModelName.findData(add_socket[1]) != -1:
-            #self.boxAddSocket.setChecked(add_socket[0])
-            #self.socketModelName.setCurrentIndex(self.socketModelName.findData(add_socket[1]))
-        #else:
-            #self.boxAddSocket.setChecked(QtCore.Qt.Unchecked)
-        
-        #socket = eval(dane["socket"])
-        #self.boxSetAsSocketa.setChecked(int(socket[0]))
-        #self.socketHeight.setValue(socket[1])
         
         #try:
             #for i, j in eval(dane["adjust"]).items():
@@ -1001,7 +1000,7 @@ class dodajElement(QtGui.QDialog):
                 self.searcher.setStyleSheet("border: 2px solid #F00")
         else:
             self.searcher.setStyleSheet("border: 1px solid #808080")
-        
+
     def editCategoryF(self):
         ID = int(self.modelsList.currentItem().data(0, QtCore.Qt.UserRole))
         categoryData = self.sql.getCategoryByID(ID)
@@ -1059,14 +1058,21 @@ class dodajElement(QtGui.QDialog):
             self.editCategory.setDisabled(False)
             self.removeCategory.setDisabled(False)
             self.removeModel.setDisabled(True)
+            self.setOneCategoryForModels.setDisabled(True)
         else:
             self.editCategory.setDisabled(True)
             self.removeCategory.setDisabled(True)
             self.removeModel.setDisabled(False)
+            self.setOneCategoryForModels.setDisabled(False)
             #
-            dane = self.sql.getModelByID(self.modelsList.currentItem().data(0, QtCore.Qt.UserRole))
-            if dane[0]:
-                self.showData(self.sql.convertToTable(dane[1]))
+            try:
+                dane = self.sql.getModelByID(self.modelsList.currentItem().data(0, QtCore.Qt.UserRole))
+                if dane[0]:
+                    modelData = self.sql.convertToTable(dane[1])
+                    modelData = self.sql.packagesDataToDictionary(modelData)
+                    self.showData(modelData)
+            except Exception, e:
+                FreeCAD.Console.PrintWarning("ERROR: {0}.\n".format(e))
 
     def reloadCategoryList(self):
         currentIndex = self.modelCategory.currentIndex()
@@ -1087,6 +1093,7 @@ class dodajElement(QtGui.QDialog):
         self.editCategory.setDisabled(True)
         self.removeCategory.setDisabled(True)
         self.removeModel.setDisabled(True)
+        self.setOneCategoryForModels.setDisabled(True)
         
         try:
             try:
@@ -1102,9 +1109,23 @@ class dodajElement(QtGui.QDialog):
                 self.wyszukajObiekty(data)
         except Exception, e:
             FreeCAD.Console.PrintWarning(u"Error 6: {0} \n".format(e))
+    
+    def checkSockets(self, tabID):
+        if tabID == 1 and self.socketModelName.count() == 0:
+            self.boxAddSocket.setDisabled(True)
+        else:
+            self.boxAddSocket.setDisabled(False)
             
     def reloadSockets(self):
-        pass
+        try:
+            self.socketModelName.clear()
+            
+            for i in self.sql.getAllSockets():
+                socket = self.sql.convertToTable(i)
+                self.socketModelName.addItem(socket['name'])
+                self.socketModelName.setItemData(self.socketModelName.count() - 1, socket['id'], QtCore.Qt.UserRole)
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0}.\n".format(e))
         
     ##########################
     ##########################
@@ -1345,6 +1366,7 @@ class dodajElement(QtGui.QDialog):
         self.RightSide_tab = QtGui.QTabWidget()
         self.RightSide_tab.addTab(rightSide_Main, u"Main")
         self.RightSide_tab.addTab(rightSide_Other, u"Other")
+        self.connect(self.RightSide_tab, QtCore.SIGNAL("currentChanged (int)"), self.checkSockets)
         
         mainWidgetRightSide = QtGui.QWidget()
         mainLayRightSide = QtGui.QGridLayout(mainWidgetRightSide)
@@ -1360,6 +1382,16 @@ class dodajElement(QtGui.QDialog):
     # left menu - options
     ##########################
     def leftMenuLayout(self):
+        ########################
+        # database
+        ########################
+        modelsListSaveCopy = QtGui.QPushButton("")
+        #modelsListSaveCopy.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        modelsListSaveCopy.setIcon(QtGui.QIcon(":/data/img/databaseExport.png"))
+        modelsListSaveCopy.setToolTip(u"Save database copy")
+        modelsListSaveCopy.setFlat(True)
+        self.connect(modelsListSaveCopy, QtCore.SIGNAL("clicked ()"), self.prepareCopy)
+        
         ########################
         # models list
         ########################
@@ -1383,10 +1415,17 @@ class dodajElement(QtGui.QDialog):
         
         self.removeModel = QtGui.QPushButton("")
         self.removeModel.setIcon(QtGui.QIcon(":/data/img/databaseDelete.png"))
-        self.removeModel.setToolTip(u"Delete selected model from database")
+        self.removeModel.setToolTip(u"Delete all selected models from database")
         self.removeModel.setFlat(True)
         self.removeModel.setDisabled(True)
         self.connect(self.removeModel, QtCore.SIGNAL("clicked ()"), self.deleteModel)
+        
+        self.setOneCategoryForModels = QtGui.QPushButton("")
+        self.setOneCategoryForModels.setIcon(QtGui.QIcon(":/data/img/Draft_SelectGroup.png"))
+        self.setOneCategoryForModels.setToolTip(u"Set one category for all selected models")
+        self.setOneCategoryForModels.setFlat(True)
+        self.setOneCategoryForModels.setDisabled(True)
+        self.connect(self.setOneCategoryForModels, QtCore.SIGNAL("clicked ()"), self.setOneCategoryForModelsF)
         
         ########################
         # categories
@@ -1410,14 +1449,17 @@ class dodajElement(QtGui.QDialog):
         self.removeCategory.setFlat(True)
         self.removeCategory.setDisabled(True)
         self.connect(self.removeCategory, QtCore.SIGNAL("clicked ()"), self.deleteCategory)
-        ##
+        ########################
+        ########################
         mainLayLeftSide = QtGui.QVBoxLayout()
         mainLayLeftSide.addWidget(modelsListExpand)
         mainLayLeftSide.addWidget(modelsListCollapse)
         mainLayLeftSide.addWidget(separator())
         mainLayLeftSide.addWidget(modelsListReload)
+        mainLayLeftSide.addWidget(modelsListSaveCopy)
         mainLayLeftSide.addWidget(separator())
         mainLayLeftSide.addWidget(self.removeModel)
+        mainLayLeftSide.addWidget(self.setOneCategoryForModels)
         mainLayLeftSide.addWidget(separator())
         mainLayLeftSide.addWidget(self.editCategory)
         mainLayLeftSide.addWidget(addCategoryButton)
@@ -1426,8 +1468,7 @@ class dodajElement(QtGui.QDialog):
         mainLayLeftSide.setContentsMargins(0, 0, 0, 0)
         
         return mainLayLeftSide
-        
-    
+ 
     ##########################
     # searcher
     ##########################

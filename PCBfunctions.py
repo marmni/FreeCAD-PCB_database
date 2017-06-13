@@ -153,6 +153,48 @@ def getFromSettings_databasePath():
         return __currentPath__ + '/data/database.db'
 
 
+class prepareScriptCopy(QtGui.QDialog):
+    def __init__(self, parent=None):
+        QtGui.QDialog.__init__(self, parent)
+        self.setWindowTitle(u"Safety copy")
+        self.setWindowIcon(QtGui.QIcon(":/data/img/databaseExport.png"))
+        #
+        optionSaveDatabase = QtGui.QCheckBox("Database")
+        optionSaveModels = QtGui.QCheckBox("Models")
+        optionSaveFreecadSettings = QtGui.QCheckBox("FreeCAD settings")
+        
+        scriptLogo = QtGui.QLabel("")
+        scriptLogo.setPixmap(QtGui.QPixmap(":/data/img/uklad.png"))
+        
+        path = QtGui.QLineEdit(os.path.expanduser("~"))
+        path.setReadOnly(True)
+        
+        pathChange = QtGui.QPushButton("...")
+        
+        buttons = QtGui.QDialogButtonBox()
+        buttons.setOrientation(QtCore.Qt.Horizontal)
+        buttons.addButton("Cancel", QtGui.QDialogButtonBox.RejectRole)
+        buttons.addButton("Save", QtGui.QDialogButtonBox.AcceptRole)
+        self.connect(buttons, QtCore.SIGNAL("accepted()"), self, QtCore.SLOT("accept()"))
+        self.connect(buttons, QtCore.SIGNAL("rejected()"), self, QtCore.SLOT("reject()"))
+        #
+        layPath = QtGui.QHBoxLayout()
+        layPath.addWidget(QtGui.QLabel(u"Path"))
+        layPath.addWidget(path)
+        layPath.addWidget(pathChange)
+        
+        lay = QtGui.QGridLayout(self)
+        lay.addWidget(optionSaveDatabase, 1, 0, 1, 1)
+        lay.addWidget(optionSaveModels, 2, 0, 1, 1)
+        lay.addWidget(optionSaveFreecadSettings, 3, 0, 1, 1)
+        lay.addWidget(scriptLogo, 0, 1, 5, 1)
+        lay.addLayout(layPath, 5, 0, 1, 2)
+        lay.addItem(QtGui.QSpacerItem(10, 20), 6, 0, 1, 2)
+        lay.addWidget(buttons, 7, 0, 1, 2)
+        lay.setRowStretch(8, 10)
+    
+    def accept(self):
+        FreeCAD.Console.PrintWarning("jest .\n")
 
 
 ########################################################################

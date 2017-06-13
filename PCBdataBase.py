@@ -34,6 +34,8 @@ from sqlalchemy import Column, Integer, String, Boolean, Float
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import reflection
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship, backref
 
 import FreeCAD
 from PCBfunctions import getFromSettings_databasePath
@@ -69,11 +71,10 @@ class Models(Base):
     path3DModels = Column(String, nullable=False)
     isSocket = Column(Boolean)
     isSocketHeight = Column(Float)
-    soketID = Column(Integer)
-    soketIDSocket = Column(Boolean)
-    software = Column(String)
+    socketID = Column(Integer)
+    socketIDSocket = Column(Boolean)
 
-    def __init__(self, name, path3DModels, description='', categoryID=0, datasheet='', isSocket=False, isSocketHeight=0.0, soketID=0, soketIDSocket=False, software=''):
+    def __init__(self, name, path3DModels, description='', categoryID=0, datasheet='', isSocket=False, isSocketHeight=0.0, socketID=0, socketIDSocket=False):
         self.name = name
         self.description = description
         self.categoryID = categoryID
@@ -81,12 +82,40 @@ class Models(Base):
         self.path3DModels = path3DModels
         self.isSocket = isSocket
         self.isSocketHeight = isSocketHeight
-        self.soketID = soketID
-        self.soketIDSocket = soketIDSocket
-        self.software = software
+        self.socketID = socketID
+        self.socketIDSocket = socketIDSocket
     
     def __repr__(self):
         return "<Models('%s','%s')>" % (self.name, self.description)
+
+
+class Packages(Base):
+    __tablename__ = "packages"
+    
+    id = Column(Integer, primary_key=True)
+    modelID = Column(Integer)
+    name = Column(String, nullable=False)
+    software = Column(String, nullable=False)
+    x = Column(Float)
+    y = Column(Float)
+    z = Column(Float)
+    rx = Column(Float)
+    ry = Column(Float)
+    rz = Column(Float)
+    
+    def __init__(self, modelID, name, software, x=0.0, y=0.0, z=0.0, rx=0.0, ry=0.0, rz=0.0):
+        self.modelID = modelID
+        self.name = name
+        self.software = software
+        self.x = x
+        self.y = y
+        self.z = z
+        self.rx = rx
+        self.ry = ry
+        self.rz = rz
+    
+    def __repr__(self):
+        return "<Packages('%s','%s')>" % (self.name)
 
 
 class dataBase_CFG():
@@ -126,6 +155,33 @@ class dataBase:
         
     def  checkVersion(self):
         '''  '''
+        #modelsCategories = {
+            #1: ['Capacitors', ''],
+            #2: ['Resistors', ''],
+            #3: ['Relays', ''],
+            #4: ['Rectifiers', ''],
+            #5: ['Heatsinks', ''],
+            #6: ['Crystals', ''],
+            #7: ['Diodes', ''],
+            #8: ['Led', ''],
+            #9: ['Buzzers', ''],
+            #10: ['Goldpins', ''],
+            #11: ['Jumpers', ''],
+            #12: ['Packages', ''],
+            #13: ['con-phoenix', ''],
+            #14: ['Varistors', ''],
+            #15: ["Connectors", ""],
+            #16: ["Potentiometers", ""],
+            #17: ["Batteries", ""],
+            #18: ["con-harting", ""],
+            #19: ["Packages-*BGA", ""],
+            #20: ["Display", ""],
+            #21: ["Switch-dil", ""],
+            #22: ["Inductor", ""]
+        #}
+        
+        #FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('partsCategories', json.dumps(modelsCategories))
+        #
         oldDB = getFromSettings_databasePath().replace(".db", ".cfg")
         
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", "").strip() != '':
@@ -151,7 +207,7 @@ class dataBase:
             dataBaseCFG = dataBase_CFG()  # old cfg file
             dataBaseCFG.read(getFromSettings_databasePath().replace(".db", ".cfg"))
         except Exception, e:
-            FreeCAD.Console.PrintWarning("ERROR: {0}.\n".format(self.errorsDescription(e)))
+            FreeCAD.Console.PrintWarning("ERROR cfg2db 1: {0}.\n".format(self.errorsDescription(e)))
             return False
         else:
             FreeCAD.Console.PrintWarning("Reading old database\n")
@@ -178,8 +234,7 @@ class dataBase:
             result["path3DModels"] = self.clearString(data["path"])
             result["isSocket"] = eval(self.clearString(data["socket"]))[0]
             result["isSocketHeight"] = float(eval(self.clearString(data["socket"]))[1])
-            result["soketIDSocket"] = eval(self.clearString(data["add_socket"]))[0]
-            result["software"] = self.clearString(data["soft"])
+            result["socketIDSocket"] = eval(self.clearString(data["add_socket"]))[0]
             
             categoryID = int(data["category"])
             if categoryID in [-1, 0]:
@@ -191,19 +246,36 @@ class dataBase:
                 else:
                     result["categoryID"] = 0
             
-            if result["soketIDSocket"]:
-                result["soketID"] = 0
-                seketsList.append([result["name"], dataBaseCFG.getValues(result["soketIDSocket"])["name"]])
+            if result["socketIDSocket"]:
+                result["socketID"] = 0
+                seketsList.append([result["name"], dataBaseCFG.getValues(result["socketIDSocket"])["name"]])
             else:
-                result["soketID"] = 0
+                result["socketID"] = 0
+            
+            # packages
+            result["software"] = []
+            for p in eval(data["soft"]):
+                packageData = {}
+                packageData['name'] = self.clearString(p[0])
+                packageData['software'] = self.clearString(p[1])
+                packageData['x'] = float(p[2])
+                packageData['y'] = float(p[3])
+                packageData['z'] = float(p[4])
+                packageData['rx'] = float(p[5])
+                packageData['ry'] = float(p[6])
+                packageData['rz'] = float(p[7])
+                packageData['blanked'] = False
+                packageData['id'] = -1
                 
+                result["software"].append(packageData)
+            
             self.addModel(result)
-        
+            
         for i in seketsList:
-            soket = self.getModelByName(i[1])
-            if soket[0]:
-                self.session.query(Models).filter(Models.name == i[0]).update({"soketID" : socket[1].id})
-
+            socket = self.getModelByName(i[1])
+            if socket[0]:
+                self.session.query(Models).filter(Models.name == i[0]).update({"socketID" : socket[1].id})
+        
         self.session.commit()
         FreeCAD.Console.PrintWarning("DONE!.\n")
         
@@ -263,7 +335,7 @@ class dataBase:
         elif "ConvertError()" in str(error):
             return "Problems with converting database"
         else:
-            return e.message
+            return error.message
     
     def convertToTable(self, data):
         result = {}
@@ -272,6 +344,117 @@ class dataBase:
             if not i.startswith("_sa_"):
                 result[i] = j
         return result
+        
+    def findPackage(self, name, software):
+        try:
+            name = self.clearString(name).strip()
+            software = self.clearString(software).strip()
+            
+            if software == "*":
+                query = self.session.query(Packages).filter(Packages.name == name)
+            else:
+                query = self.session.query(Packages).filter(Packages.name == name and Packages.software == software)
+                
+            if query.count() == 0:
+                return False
+            
+            return query[0]
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0} (findPackage).\n".format(self.errorsDescription(e)))
+            return False
+            
+    def packagesDataToDictionary(self, modelData):
+        modelData['software'] = []
+        
+        for i in self.getPackagesByModelID(modelData['id']):
+            modelData['software'].append(self.convertToTable(i))
+        
+        return modelData
+    
+    def getPackagesByModelID(self, param):
+        try:
+            query = self.session.query(Packages).filter(Packages.modelID == int(param))
+            
+            if query.count() == 0:
+                return []
+            
+            return query
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0} (get package).\n".format(self.errorsDescription(e)))
+            return []
+
+    def addPackage(self, data, modelID=0, modelName=0):
+        try:
+            if modelID != 0:
+                modelID = int(modelID)
+            elif modelName != 0:
+                modelID = self.getModelByName(self.clearString(modelName))[1].id
+            else:
+                return [False]
+            
+            name = self.clearString(data['name'])
+            software = self.clearString(data['software'])
+            x = float(data['x'])
+            y = float(data['y'])
+            z = float(data['z'])
+            rx = float(data['rx'])
+            ry = float(data['ry'])
+            rz = float(data['rz'])
+            
+            package = Packages(modelID, name, software, x, y, z, rx, ry, rz)
+            self.session.add(package)
+            self.session.commit()
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0} (add package).\n".format(e))
+            return [False]
+        
+    def updatePackage(self, packageID, data):
+        try:
+            packageID = int(packageID)
+            name = self.clearString(data["name"])
+            software = self.clearString(data["software"])
+            
+            if name == '' or software == '' or packageID <= 0:
+                raise MandatoryError()
+            
+            self.session.query(Packages).filter(Packages.id == packageID).update({
+                    "name": name,
+                    "software": software,
+                    "x": float(data["x"]),
+                    "y": float(data["y"]),
+                    "z": float(data["z"]),
+                    "rx": float(data["rx"]),
+                    "ry": float(data["ry"]),
+                    "rz": float(data["rz"])
+             })
+             
+            self.session.commit()
+        except Exception, e:
+            self.session.rollback()
+            FreeCAD.Console.PrintWarning("ERROR: {0} (update package).\n".format(self.errorsDescription(e)))
+            return False
+        
+    def deletePackage(self, packageID):
+        try:
+            self.session.query(Packages).filter(Packages.id == int(packageID)).delete()
+            self.session.commit()
+        except Exception, e:
+            self.session.rollback()
+            FreeCAD.Console.PrintWarning("ERROR: {0} (delete package).\n".format(self.errorsDescription(e)))
+            return False
+        else:
+            return True
+            
+    def getAllSockets(self):
+        try:
+            query = self.session.query(Models).filter(Models.isSocket == 1)
+            if query.count() == 0:
+                return []
+            
+            return query
+        except Exception, e:
+            FreeCAD.Console.PrintWarning("ERROR: {0} (get all sockets).\n".format(self.errorsDescription(e)))
+            return []
 
     def getAllModelsByCategory(self, categoryID):
         return self.session.query(Models).filter(Models.categoryID == categoryID)
@@ -283,11 +466,10 @@ class dataBase:
                 return [False]
             
             return [True, query[0]]
-            
         except Exception, e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (get model).\n".format(self.errorsDescription(e)))
             return [False]
-    
+
     def getModelByName(self, param):
         try:
             query = self.session.query(Models).filter(Models.name == self.clearString(param))
@@ -304,8 +486,8 @@ class dataBase:
         try:
             modelID = int(modelID)
             
-            self.session.query(Models).filter(Models.sockedID == modelID).update({"sockedID" : 0, "soketIDSocket" : False})
-            
+            self.session.query(Models).filter(Models.sockedID == modelID).update({"sockedID" : 0, "socketIDSocket" : False})
+            self.session.query(Packages).filter(Packages.modelID == modelID).delete()
             self.session.query(Models).filter(Models.id == modelID).delete()
             self.session.commit()
         except Exception ,e:
@@ -327,25 +509,56 @@ class dataBase:
             isSocketHeight = float(data["isSocketHeight"])
 
             try:
-                soketID = int(data["soketID"])
+                socketID = int(data["socketID"])
             except:
-                soketID = 0
+                socketID = 0
                 
-            soketIDSocket = data["soketIDSocket"]
-            software = self.clearString(data["software"])
+            socketIDSocket = data["socketIDSocket"]
             
             if name == '' or path3DModels == '':
                 raise MandatoryError()
 
-            model = Models(name, path3DModels, description, categoryID, datasheet, isSocket, isSocketHeight, soketID, soketIDSocket, software)
+            model = Models(name, path3DModels, description, categoryID, datasheet, isSocket, isSocketHeight, socketID, socketIDSocket)
             self.session.add(model)
             self.session.commit()
+            
+            for i in data["software"]:
+                if i['blanked']:
+                    if int(i['id']) == -1:
+                        continue
+                    else:  # del package
+                        self.deletePackage(int(i['id']))
+                else:
+                    if int(i['id']) != -1:  # update package
+                        self.updatePackage(int(i['id']), i)
+                    else:  # add package
+                        self.addPackage(i, modelName=name)
+            
         except Exception, e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (add new model).\n".format(self.errorsDescription(e)))
             return False
         else:
             FreeCAD.Console.PrintWarning("Model {0} was added.\n".format(name))
+            return True
+    
+    def setCategoryForModel(self, modelID, categoryID):
+        try:
+            modelID = int(modelID)
+            
+            if modelID <= 0:
+                raise MandatoryError()
+                
+            self.session.query(Models).filter(Models.id == modelID).update({
+                    "categoryID" : int(categoryID)
+            })
+            self.session.commit()
+            
+        except Exception, e:
+            self.session.rollback()
+            FreeCAD.Console.PrintWarning("ERROR: {0} (update model).\n".format(self.errorsDescription(e)))
+            return False
+        else:
             return True
     
     def updateModel(self, modelID, data):
@@ -355,9 +568,9 @@ class dataBase:
             modelID = int(modelID)
 
             try:
-                soketID = int(data["soketID"])
+                socketID = int(data["socketID"])
             except:
-                soketID = 0
+                socketID = 0
             
             if name == '' or path3DModels == '' or modelID <= 0:
                 raise MandatoryError()
@@ -370,12 +583,24 @@ class dataBase:
                     "path3DModels" : path3DModels,
                     "isSocket" : data["isSocket"],
                     "isSocketHeight" : float(data["isSocketHeight"]),
-                    "soketID" : soketID,
-                    "soketIDSocket" : data["soketIDSocket"],
-                    "software" : self.clearString(data["software"])
+                    "socketID" : socketID,
+                    "socketIDSocket" : data["socketIDSocket"]
             })
-
+            
             self.session.commit()
+            
+            for i in data["software"]:
+                if i['blanked']:
+                    if int(i['id']) == -1:
+                        continue
+                    else:  # del package
+                        self.deletePackage(int(i['id']))
+                else:
+                    if int(i['id']) != -1:  # update package
+                        self.updatePackage(int(i['id']), i)
+                    else:  # add package
+                        self.addPackage(i, modelID=modelID)
+            
         except Exception, e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (update model).\n".format(self.errorsDescription(e)))

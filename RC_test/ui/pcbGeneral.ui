@@ -1,0 +1,586 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Gui::Dialog::DlgSettingsPCB</class>
+ <widget class="QWidget" name="Gui::Dialog::DlgSettingsPCB">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>496</width>
+    <height>584</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>General</string>
+  </property>
+  <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="title">
+      <string/>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_5">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout">
+        <item>
+         <widget class="QLabel" name="label_7">
+          <property name="text">
+           <string>Default software</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="Gui::PrefComboBox" name="gui::prefcombobox_1" native="true">
+             <item>
+              <property name="text">
+               <string>Eagle</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>KiCad</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>FidoCadJ</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>FreePCB</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>Razen</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>gEDA</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>IDF v2</string>
+              </property>
+             </item>
+             <item>
+                 <property name="text">
+               <string>IDF v3</string>
+              </property>
+             </item>
+             <item>
+                 <property name="text">
+               <string>IDF v4</string>
+              </property>
+             </item>
+            <item>
+                 <property name="text">
+               <string>HyperLynx</string>
+              </property>
+             </item>
+          <property name="accessibleDescription">
+           <string/>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>pcbDefaultSoftware</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox">
+     <property name="title">
+      <string>Board</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_2">
+      <item>
+       <layout class="QGridLayout" name="gridLayout_2">
+        <item row="0" column="0" colspan="2">
+         <widget class="QLabel" name="label_3">
+          <property name="text">
+           <string>Default board thickness</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="1">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_5">
+          <property name="toolTip">
+           <string>Load board thickness from file (if available)</string>
+          </property>
+          <property name="text">
+           <string>Load board thickness from file (if available)</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>boardImportThickness</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="3">
+         <widget class="Gui::PrefDoubleSpinBox" name="gui::prefdoublespinbox_1">
+          <property name="toolTip">
+           <string>Board Thickness</string>
+          </property>
+          <property name="decimals">
+           <number>1</number>
+          </property>
+          <property name="value">
+           <double>1.500000000000000</double>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>boardThickness</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <spacer name="horizontalSpacer_5">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="1" column="0">
+         <spacer name="horizontalSpacer_6">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Maximum</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>20</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="3" column="0" colspan="2">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_1">
+          <property name="toolTip">
+           <string>Import holes</string>
+          </property>
+          <property name="text">
+           <string>Import holes</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>boardImportHoles</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_3">
+     <property name="title">
+      <string>Parts</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_3">
+      <item>
+       <layout class="QGridLayout" name="gridLayout">
+        <item row="2" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_2">
+          <property name="toolTip">
+           <string>Colorize elements</string>
+          </property>
+          <property name="text">
+           <string>Colorize elements</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>partsColorize</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_3">
+          <property name="toolTip">
+           <string>Generate report with unknown parts</string>
+          </property>
+          <property name="text">
+           <string>Generate report with unknown parts</string>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>partsReport</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_4">
+          <property name="toolTip">
+           <string>Import parts</string>
+          </property>
+          <property name="text">
+           <string>Import parts</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>partsImport</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_20">
+          <property name="text">
+           <string>Group parts</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>groupParts</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="2" column="2">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_14">
+          <property name="text">
+           <string>Adjust part name/value</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>adjustNameValue</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="2">
+         <widget class="Gui::PrefCheckBox" name="gui::prefcheckbox_23">
+          <property name="text">
+           <string>PCB-Decals (for IDF)</string>
+          </property>
+          <property name="checked">
+           <bool>true</bool>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>pcbDecals</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+      <item>
+       <spacer name="verticalSpacer_2">
+        <property name="orientation">
+         <enum>Qt::Vertical</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>20</width>
+          <height>10</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_4">
+        <item>
+         <widget class="QLabel" name="label_4">
+          <property name="text">
+           <string>Paths</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_4">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Maximum</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="Gui::PrefLineEdit" name="gui::preflineedit" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>360</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Paths to 3D models</string>
+          </property>
+          <property name="text" stdset="0">
+           <string/>
+          </property>
+          <property name="placeholderText" stdset="0">
+           <string>Path_1,Path_2,Path_3</string>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>partsPaths</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_2">
+     <property name="title">
+      <string>Database</string>
+     </property>
+     <layout class="QVBoxLayout" name="verticalLayout_2">
+      <item>
+       <layout class="QHBoxLayout" name="horizontalLayout_3">
+        <item>
+         <widget class="QLabel" name="label_2">
+          <property name="text">
+           <string>Path</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <spacer name="horizontalSpacer_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Maximum</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item>
+         <widget class="Gui::PrefFileChooser" name="gui::preffilechooser_1" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>360</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Path to database *.cfg file</string>
+          </property>
+          <property name="placeholderText" stdset="0">
+           <string>Default path: /Mod/PCB/data/database.cfg</string>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>databasePath</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_4">
+     <property name="title">
+      <string>Libraries</string>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_4">
+      <item row="0" column="0">
+       <layout class="QGridLayout" name="gridLayout_3">
+        <item row="0" column="1">
+         <spacer name="horizontalSpacer">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
+          </property>
+          <property name="sizeType">
+           <enum>QSizePolicy::Maximum</enum>
+          </property>
+          <property name="sizeHint" stdset="0">
+           <size>
+            <width>40</width>
+            <height>20</height>
+           </size>
+          </property>
+         </spacer>
+        </item>
+        <item row="0" column="0">
+         <widget class="QLabel" name="label">
+          <property name="text">
+           <string>FidoCadJ</string>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="0">
+         <widget class="QLabel" name="label_5">
+          <property name="text">
+           <string>Razen</string>
+          </property>
+         </widget>
+        </item>
+        <item row="0" column="2">
+         <widget class="Gui::PrefLineEdit" name="gui::preflineedit_1" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>360</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Paths to FidoCADJ libraries</string>
+          </property>
+          <property name="text" stdset="0">
+           <string/>
+          </property>
+          <property name="placeholderText" stdset="0">
+           <string>Path_1</string>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>librariesPathFidoCADJ</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+        <item row="1" column="2">
+         <widget class="Gui::PrefLineEdit" name="gui::preflineedit_2" native="true">
+          <property name="minimumSize">
+           <size>
+            <width>360</width>
+            <height>0</height>
+           </size>
+          </property>
+          <property name="toolTip">
+           <string>Paths to Razen libraries</string>
+          </property>
+          <property name="text" stdset="0">
+           <string/>
+          </property>
+          <property name="placeholderText" stdset="0">
+           <string>Path_1</string>
+          </property>
+          <property name="prefEntry" stdset="0">
+           <cstring>librariesPathRazen</cstring>
+          </property>
+          <property name="prefPath" stdset="0">
+           <cstring>Mod/PCB</cstring>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="verticalSpacer">
+     <property name="orientation">
+      <enum>Qt::Vertical</enum>
+     </property>
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>20</width>
+       <height>40</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>Gui::PrefDoubleSpinBox</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>Gui/PrefWidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Gui::PrefCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>Gui/PrefWidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Gui::FileChooser</class>
+   <extends>QWidget</extends>
+   <header>Gui/FileDialog.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Gui::PrefFileChooser</class>
+   <extends>Gui::FileChooser</extends>
+   <header>Gui/PrefWidgets.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Gui::PrefLineEdit</class>
+   <extends>QWidget</extends>
+   <header>gui::preflineedit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>Gui::PrefComboBox</class>
+   <extends>QWidget</extends>
+   <header>gui::prefcombobox.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

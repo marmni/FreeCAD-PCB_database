@@ -38,6 +38,35 @@ __freecadSettings__ = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/P
 #***********************************************************************
 #*                             GUI
 #***********************************************************************
+class setOneCategoryGui(QtGui.QDialog):
+    def __init__(self, parent=None):
+        QtGui.QDialog.__init__(self, parent)
+        self.setWindowTitle(u'Set one category for all selected models')
+        #
+        self.parentCategory = QtGui.QComboBox()
+        # buttons
+        buttons = QtGui.QDialogButtonBox()
+        buttons.setOrientation(QtCore.Qt.Horizontal)
+        buttons.addButton("Cancel", QtGui.QDialogButtonBox.RejectRole)
+        buttons.addButton("Set", QtGui.QDialogButtonBox.AcceptRole)
+        self.connect(buttons, QtCore.SIGNAL("accepted()"), self, QtCore.SLOT("accept()"))
+        self.connect(buttons, QtCore.SIGNAL("rejected()"), self, QtCore.SLOT("reject()"))
+        #
+        lay = QtGui.QGridLayout(self)
+        lay.addWidget(QtGui.QLabel(u'New category'), 0, 0, 1, 1)
+        lay.addWidget(self.parentCategory, 0, 1, 1, 1)
+        lay.setSpacing(10)
+        lay.addWidget(buttons, 1, 0, 1, 2, QtCore.Qt.AlignRight)
+        lay.setRowStretch(0, 10)
+        lay.setColumnStretch(1, 10)
+    
+    def loadCategories(self, categories):
+        for i in categories:
+            self.parentCategory.addItem(i.name, i.id)
+        
+        self.parentCategory.insertItem(-1, 'None', 0)
+        self.parentCategory.setCurrentIndex(self.parentCategory.findData(-1))
+    
 class addCategoryGui(QtGui.QDialog):
     def __init__(self, parent=None):
         QtGui.QDialog.__init__(self, parent)
