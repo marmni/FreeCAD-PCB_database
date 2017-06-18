@@ -36,6 +36,7 @@ import Part
 import os
 import __builtin__
 import unicodedata
+import time
 #
 import PCBconf
 from PCBpartManaging import partsManaging
@@ -68,12 +69,12 @@ from formats.eagle import EaglePCB
 class mainPCB(partsManaging):
     def __init__(self, wersjaFormatu, filename, parent=None):
         #reload(PCBconf)
-        partsManaging.__init__(self)
+        partsManaging.__init__(self, wersjaFormatu)
         self.projektBRD = None
         self.projektBRDName = None
         
         if wersjaFormatu == "eagle":
-            self.wersjaFormatu = EaglePCB(filename)
+            self.wersjaFormatu = EaglePCB(filename, self)
         #elif wersjaFormatu == "freepcb":
             #self.wersjaFormatu = FreePCB()
         #elif wersjaFormatu == "geda":
@@ -102,12 +103,27 @@ class mainPCB(partsManaging):
     def setProject(self, filename):
         self.projektBRDName = filename
         self.wersjaFormatu.setProject()
+        
+    def printInfo(self, data, dataFormat='msg'):
+        if self.wersjaFormatu.dialogMAIN.debugImport.isChecked():
+            time.sleep(0.05)
+            
+            if dataFormat == 'error':
+                FreeCAD.Console.PrintError(str(data))
+            else:
+                FreeCAD.Console.PrintMessage(str(data))
+            
+            QtGui.qApp.processEvents()
     
     def generate(self, doc, groupBRD):
+        self.printInfo('\nInitializing')
         # BOARD
         self.generatePCB(doc, groupBRD, self.wersjaFormatu.dialogMAIN.gruboscPlytki.value())
         # HOLES
         self.generateHoles(doc, self.wersjaFormatu.dialogMAIN.holesMin.value(), self.wersjaFormatu.dialogMAIN.holesMax.value())
+        # PARTS
+        if self.wersjaFormatu.dialogMAIN.plytkaPCB_elementy.isChecked():
+            self.importParts(self.wersjaFormatu.dialogMAIN.plytkaPCB_elementyKolory.isChecked(), self.wersjaFormatu.dialogMAIN.adjustParts.isChecked(), self.wersjaFormatu.dialogMAIN.plytkaPCB_grupujElementy.isChecked(), self.wersjaFormatu.dialogMAIN.partMinX.value(), self.wersjaFormatu.dialogMAIN.partMinY.value(), self.wersjaFormatu.dialogMAIN.partMinZ.value())
         # LAYERS
         grp = createGroup_Layers()
         grp_2 = createGroup_Areas()
@@ -132,84 +148,47 @@ class mainPCB(partsManaging):
                 #
                 layerFunction = self.wersjaFormatu.defineFunction(layerNumber)
                 
-                if layerFunction in ["silk", "pads", "paths"]:
-                    self.generateSilkLayer(doc, layerNumber, grp, layerName, layerColor, layerTransp, layerSide, layerFunction)
+                self.printInfo("\nImporting layer '{0}': ".format(layerName))
+                try:
+                    if layerFunction in ["silk", "pads", "paths"]:
+                        self.generateSilkLayer(doc, layerNumber, grp, layerName, layerColor, layerTransp, layerSide, layerFunction)
+                    elif layerFunction == "measures":
+                        self.generateDimensions(doc, grp, layerName, layerColor, self.wersjaFormatu.dialogMAIN.gruboscPlytki.value())
+                    elif layerFunction == "glue":
+                        self.generateGlue(doc, grp, layerName, layerColor, layerNumber, layerSide)
+                    elif layerFunction == "constraint":
+                        self.generateConstraintAreas(doc, layerNumber, grp, layerName, layerColor, layerTransp)
+                except Exception, e:
+                    self.printInfo('{0}'.format(e), 'error')
+                else:
+                    self.printInfo('done')
+                    
     
-    def generateSilkLayer(self, doc, layerNumber, grp, layerName, layerColor, defHeight, layerSide, layerVariant):
-        layerName = "{0}_{1}".format(layerName, layerNumber)
-        #layerSide = softLayers[self.wersjaFormatu.databaseType][layerNumber]['side']
-        layerType = [layerName]
-        #
-        layerS = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", layerName)
-        layerNew = layerSilkObject(layerS, layerType)
-        layerNew.holes = self.showHoles()
-        layerNew.side = layerSide
-        layerNew.defHeight = defHeight
-        #
-        self.wersjaFormatu.getSilkLayer(layerNew, layerNumber)
+    def importParts(self, koloroweElemnty, adjustParts, groupParts, partMinX, partMinY, partMinZ):
+        self.printInfo('\nImporting parts: ')
+        errors = []
         
-        if layerVariant == "paths":
-            self.wersjaFormatu.getPaths(layerNew, layerNumber)
-        else:
-            self.wersjaFormatu.getSilkLayerModels(layerNew, layerNumber)
+        for i in self.wersjaFormatu.getParts():
+            self.printInfo('\n    {0} ({1}): '.format(i[0][0], i[0][1]))
+            
+            result = self.addPart(i, koloroweElemnty, adjustParts, groupParts, partMinX, partMinY, partMinZ)
+        
+            if self.wersjaFormatu.dialogMAIN.plytkaPCB_plikER.isChecked() and result[0] == 'Error':
+                partNameTXT = partNameTXT_label = self.generateNewLabel(i[0][0])
+                if isinstance(partNameTXT, unicode):
+                    partNameTXT = unicodedata.normalize('NFKD', partNameTXT).encode('ascii', 'ignore')
                 
-            if layerVariant == "pads":
-                self.wersjaFormatu.getPads(layerNew, layerNumber, layerSide)
-        #
-        layerNew.generuj(layerS)
-        layerNew.updatePosition_Z(layerS)
-        viewProviderLayerSilkObject(layerS.ViewObject)
-        layerS.ViewObject.ShapeColor = layerColor
-        grp.addObject(layerS)
-        #
-        doc.recompute()
-
-    def generatePCB(self, doc, groupBRD, gruboscPlytki):
-        doc.addObject('Sketcher::SketchObject', 'PCB_Border')
-        doc.PCB_Border.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0, 0.0, 0.0), FreeCAD.Rotation(0.0, 0.0, 0.0, 1.0))
-        #
-        self.wersjaFormatu.getPCB(doc.PCB_Border)
-        #
-        PCBboard = doc.addObject("Part::FeaturePython", "Board")
-        PCBboardObject(PCBboard)
-        PCBboard.Thickness = gruboscPlytki
-        PCBboard.Border = doc.PCB_Border
-        viewProviderPCBboardObject(PCBboard.ViewObject)
-        groupBRD.addObject(doc.Board)
-        FreeCADGui.activeDocument().getObject(PCBboard.Name).ShapeColor = PCBconf.PCB_COLOR
-        FreeCADGui.activeDocument().PCB_Border.Visibility = False
-        self.updateView()
-
-    def generateHoles(self, doc, Hmin, Hmax):
-        doc.addObject('Sketcher::SketchObject', 'PCB_Holes')
-        doc.PCB_Holes.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0, 0.0, 0.0), FreeCAD.Rotation(0.0, 0.0, 0.0, 1.0))
-        FreeCADGui.activeDocument().PCB_Holes.Visibility = False
-        #
-        types = {'H':self.wersjaFormatu.dialogMAIN.plytkaPCB_otworyH.isChecked(), 'V':self.wersjaFormatu.dialogMAIN.plytkaPCB_otworyV.isChecked(), 'P':self.wersjaFormatu.dialogMAIN.plytkaPCB_otworyP.isChecked()}
-        self.wersjaFormatu.getHoles(doc.PCB_Holes, types, Hmin, Hmax)
-        #
-        doc.Board.Holes = doc.PCB_Holes
-        doc.recompute()
+                #errors.append([partNameTXT, i['package'], i['value'], i['library']])
+                errors.append([partNameTXT, i[0][1], i[1], i[6]])
+                self.printInfo('error', 'error')
+            else:
+                self.printInfo('done')
+        
+        if self.wersjaFormatu.dialogMAIN.plytkaPCB_plikER.isChecked() and len(errors):
+            self.generateErrorReport(errors, self.projektBRDName)
     
-    def Draft2Sketch(self, elem, sketch):
-        return (DraftGeomUtils.geom(elem.toShape().Edges[0], sketch.Placement))
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    def generateGlue(self, wires, doc, grp, layerName, layerColor, layerNumber):
-        if PCBconf.PCBlayers[PCBconf.softLayers[self.databaseType][layerNumber][1]][0] == 1:
-            side = 'TOP'
-        else:
-            side = 'BOTTOM'
-        #
-        for i, j in wires.items():
+    def generateGlue(self, doc, grp, layerName, layerColor, layerNumber, layerSide):
+        for i, j in self.wersjaFormatu.getGlue(layerNumber).items():
             ser = doc.addObject('Sketcher::SketchObject', "Sketch_{0}".format(layerName))
             ser.ViewObject.Visibility = False
             for k in j:
@@ -230,16 +209,116 @@ class mainPCB(partsManaging):
             glue = createGlue()
             glue.base = ser
             glue.width = i
-            glue.side = side
+            glue.side = layerSide
             glue.color = layerColor
             glue.generate()
+        
+    def generateDimensions(self, doc, layerGRP, layerName, layerColor, gruboscPlytki):
+        layerName = "{0}".format(layerName)
+        grp = doc.addObject("App::DocumentObjectGroup", layerName)
+        
+        for i in self.wersjaFormatu.getDimensions():
+            x1 = i[0]
+            y1 = i[1]
+            x2 = i[2]
+            y2 = i[3]
+            x3 = i[4]
+            y3 = i[5]
+            dtype = i[6]
+            
+            if dtype in ["angle"]:
+                continue
+            
+            dim = Draft.makeDimension(FreeCAD.Vector(x1, y1, gruboscPlytki), FreeCAD.Vector(x2, y2, gruboscPlytki), FreeCAD.Vector(x3, y3, gruboscPlytki))
+            dim.ViewObject.LineColor = layerColor
+            dim.ViewObject.LineWidth = 1.00
+            dim.ViewObject.ExtLines = 0.00
+            dim.ViewObject.FontSize = 2.00
+            dim.ViewObject.ArrowSize = '0.5 mm'
+            dim.ViewObject.ArrowType = "Arrow"
+            grp.addObject(dim)
+        
+        layerGRP.addObject(grp)
     
-    def generateConstraintAreas(self, areas, doc, layerNumber, grp, layerName, layerColor, layerTransparent):
-        typeL = PCBconf.PCBconstraintAreas[PCBconf.softLayers[self.databaseType][layerNumber][1]][1]
+    def generateSilkLayer(self, doc, layerNumber, grp, layerName, layerColor, defHeight, layerSide, layerVariant):
+        layerName = "{0}_{1}".format(layerName, layerNumber)
+        #layerSide = softLayers[self.wersjaFormatu.databaseType][layerNumber]['side']
+        layerType = [layerName]
+        #
+        layerS = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", layerName)
+        layerNew = layerSilkObject(layerS, layerType)
+        layerNew.holes = self.showHoles()
+        layerNew.side = layerSide
+        layerNew.defHeight = defHeight
+        #
+        if layerVariant == "paths":
+            self.wersjaFormatu.getSilkLayer(layerNew, layerNumber, [True, True, True, False])
+            self.wersjaFormatu.getPaths(layerNew, layerNumber)
+        else:
+            self.wersjaFormatu.getSilkLayer(layerNew, layerNumber)
+            self.wersjaFormatu.getSilkLayerModels(layerNew, layerNumber)
+                
+            if layerVariant == "pads":
+                self.wersjaFormatu.getPads(layerNew, layerNumber, layerSide)
+        #
+        layerNew.generuj(layerS)
+        layerNew.updatePosition_Z(layerS)
+        viewProviderLayerSilkObject(layerS.ViewObject)
+        layerS.ViewObject.ShapeColor = layerColor
+        grp.addObject(layerS)
+        #
+        doc.recompute()
+
+    def generatePCB(self, doc, groupBRD, gruboscPlytki):
+        self.printInfo('\nGenerate board: ')
+        
+        try:
+            doc.addObject('Sketcher::SketchObject', 'PCB_Border')
+            doc.PCB_Border.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0, 0.0, 0.0), FreeCAD.Rotation(0.0, 0.0, 0.0, 1.0))
+            #
+            self.wersjaFormatu.getPCB(doc.PCB_Border)
+            #
+            PCBboard = doc.addObject("Part::FeaturePython", "Board")
+            PCBboardObject(PCBboard)
+            PCBboard.Thickness = gruboscPlytki
+            PCBboard.Border = doc.PCB_Border
+            viewProviderPCBboardObject(PCBboard.ViewObject)
+            groupBRD.addObject(doc.Board)
+            FreeCADGui.activeDocument().getObject(PCBboard.Name).ShapeColor = PCBconf.PCB_COLOR
+            FreeCADGui.activeDocument().PCB_Border.Visibility = False
+            self.updateView()
+        except Exception, e:
+             self.printInfo('{0}'.format(), 'error')
+        else:
+            self.printInfo('done')
+        
+    def generateHoles(self, doc, Hmin, Hmax):
+        self.printInfo('\nGenerate holes: ')
+        
+        try:
+            doc.addObject('Sketcher::SketchObject', 'PCB_Holes')
+            doc.PCB_Holes.Placement = FreeCAD.Placement(FreeCAD.Vector(0.0, 0.0, 0.0), FreeCAD.Rotation(0.0, 0.0, 0.0, 1.0))
+            FreeCADGui.activeDocument().PCB_Holes.Visibility = False
+            #
+            types = {'H':self.wersjaFormatu.dialogMAIN.plytkaPCB_otworyH.isChecked(), 'V':self.wersjaFormatu.dialogMAIN.plytkaPCB_otworyV.isChecked(), 'P':self.wersjaFormatu.dialogMAIN.plytkaPCB_otworyP.isChecked()}
+            self.wersjaFormatu.getHoles(doc.PCB_Holes, types, Hmin, Hmax)
+            #
+            doc.Board.Holes = doc.PCB_Holes
+            doc.recompute()
+        except Exception, e:
+             self.printInfo('{0}'.format(), 'error')
+        else:
+            self.printInfo('done')
+    
+    def Draft2Sketch(self, elem, sketch):
+        return (DraftGeomUtils.geom(elem.toShape().Edges[0], sketch.Placement))
+    
+    def generateConstraintAreas(self, doc, layerNumber, grp, layerName, layerColor, layerTransparent):
+        typeL = PCBconf.softLayers[self.databaseType][layerNumber]['ltype']
         mainGroup = doc.addObject("App::DocumentObjectGroup", layerName)
         grp.addObject(mainGroup)
         
-        for i in areas:
+        for i in self.wersjaFormatu.getConstraintAreas(layerNumber):
             ser = doc.addObject('Sketcher::SketchObject', "Sketch_{0}".format(layerName))
             ser.ViewObject.Visibility = False
             #
@@ -320,6 +399,20 @@ class mainPCB(partsManaging):
             FreeCADGui.activeDocument().getObject(a.Name).DisplayMode = 1
             self.updateView()
         
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
+        
     def generatePolygons(self, data, doc, group, layerName, layerColor, layerNumber):
         for i in data[0]:
             for j in i: # polygons
@@ -335,12 +428,6 @@ class mainPCB(partsManaging):
                 layerS.ViewObject.ShapeColor = layerColor
                 group.addObject(layerS)
     
-    
-    
-    
-
-    
-
     def generateOctagon(self, x, y, height, width=0):
         if width == 0:
             width = height
@@ -425,24 +512,4 @@ class mainPCB(partsManaging):
             annotation.generate()
             annotation.addToAnnotations()
         
-    def addDimensions(self, wymiary, doc, layerGRP, layerName, gruboscPlytki, layerColor):
-        layerName = "{0}".format(layerName)
-
-        grp = doc.addObject("App::DocumentObjectGroup", layerName)
-        for i in wymiary:
-            x1 = i[0]
-            y1 = i[1]
-            x2 = i[2]
-            y2 = i[3]
-            x3 = i[4]
-            y3 = i[5]
-            
-            dim = Draft.makeDimension(FreeCAD.Vector(x1, y1, gruboscPlytki), FreeCAD.Vector(x2, y2, gruboscPlytki), FreeCAD.Vector(x3, y3, gruboscPlytki))
-            dim.ViewObject.LineColor = layerColor
-            dim.ViewObject.LineWidth = 1.00
-            dim.ViewObject.ExtLines = 0.00
-            dim.ViewObject.FontSize = 2.00
-            dim.ViewObject.ArrowSize = '0.5 mm'
-            dim.ViewObject.ArrowType = "Arrow"
-            grp.addObject(dim)
-        layerGRP.addObject(grp)
+    

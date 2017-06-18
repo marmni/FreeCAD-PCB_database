@@ -55,7 +55,7 @@ class dialogMAIN_FORM(QtGui.QDialog):
         freecadSettings = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB")
 
         self.setWindowTitle(u"PCB settings")
-        self.setCursor(QtGui.QCursor(QtCore.Qt.WhatsThisCursor))
+        #self.setCursor(QtGui.QCursor(QtCore.Qt.WhatsThisCursor))
         #
         self.plytkaPCB = QtGui.QCheckBox(u"Board")
         self.plytkaPCB.setDisabled(True)
@@ -161,6 +161,8 @@ class dialogMAIN_FORM(QtGui.QDialog):
         self.selectAll = QtGui.QCheckBox('de/select all layers')
         self.selectAll.setStyleSheet('''border:1px solid rgb(237, 237, 237);''')
         self.connect(self.selectAll, QtCore.SIGNAL("clicked()"), self.selectAllCategories)
+        
+        self.debugImport = QtGui.QCheckBox('Debug import')
         #
         self.spisWarstw = tabela()
         self.spisWarstw.setColumnCount(6)
@@ -197,31 +199,34 @@ class dialogMAIN_FORM(QtGui.QDialog):
         layPartSize.addWidget(self.partMinY, 1, 1, 1, 1)
         layPartSize.addWidget(QtGui.QLabel(u"H"), 2, 0, 1, 1)
         layPartSize.addWidget(self.partMinZ, 2, 1, 1, 1)
+        layPartSize.setRowStretch(3, 10)
         layPartSize.setEnabled
         #
         self.lay = QtGui.QGridLayout()
         #self.lay.addLayout(layLeftSide, 0, 0, 8, 1, QtCore.Qt.AlignTop)
-        self.lay.addWidget(self.spisWarstw, 0, 1, 10, 1)
+        self.lay.addWidget(self.spisWarstw, 0, 1, 10, 2)
         self.lay.addWidget(self.selectAll, 10, 1, 1, 1)
+        self.lay.addWidget(self.debugImport, 10, 2, 1, 1)
+        
         #self.lay.addWidget(self.plytkaPCB, 0, 1, 1, 4)
-        self.lay.addWidget(plytkaPCBInfo, 1, 2, 1, 1, QtCore.Qt.AlignLeft)
-        self.lay.addWidget(self.gruboscPlytki, 1, 3, 1, 3)
-        self.lay.addLayout(layHoles, 2, 2, 1, 3, QtCore.Qt.AlignTop)
-        self.lay.addLayout(layHolesRange, 2, 5, 1, 1)
+        self.lay.addWidget(plytkaPCBInfo, 1, 3, 1, 1, QtCore.Qt.AlignLeft)
+        self.lay.addWidget(self.gruboscPlytki, 1, 4, 1, 3)
+        self.lay.addLayout(layHoles, 2, 3, 1, 3, QtCore.Qt.AlignTop)
+        self.lay.addLayout(layHolesRange, 2, 6, 1, 1)
         #lay.addWidget(self.plytkaPCB_PADS, 3, 1, 1, 2)
-        self.lay.addWidget(self.plytkaPCB_elementy, 4, 2, 1, 3)
-        self.lay.addWidget(self.plytkaPCB_elementyKolory, 5, 2, 1, 3)
-        self.lay.addWidget(self.plytkaPCB_grupujElementy, 6, 2, 1, 3)
-        self.lay.addWidget(self.adjustParts, 7, 2, 1, 3)
-        self.lay.addWidget(self.plytkaPCB_plikER, 8, 2, 1, 3)
-        self.lay.addLayout(layPartSize, 5, 5, 5, 1)
-        self.lay.addItem(QtGui.QSpacerItem(10, 10), 11, 2, 1, 3)
-        # lib
-        self.lay.addItem(QtGui.QSpacerItem(10, 10), 13, 2, 1, 3)
-        self.lay.addWidget(buttons, 14, 0, 1, 7, QtCore.Qt.AlignCenter)
-        self.lay.setRowStretch(13, 10)
-        self.lay.setColumnMinimumWidth(1, 250)
-        self.lay.setColumnMinimumWidth(2, 120)
+        self.lay.addWidget(self.plytkaPCB_elementy, 4, 3, 1, 3)
+        self.lay.addWidget(self.plytkaPCB_elementyKolory, 5, 3, 1, 3)
+        self.lay.addWidget(self.plytkaPCB_grupujElementy, 6, 3, 1, 3)
+        self.lay.addWidget(self.adjustParts, 7, 3, 1, 3)
+        self.lay.addWidget(self.plytkaPCB_plikER, 8, 3, 1, 3)
+        self.lay.addLayout(layPartSize, 5, 6, 5, 1)
+        self.lay.addItem(QtGui.QSpacerItem(10, 10), 11, 3, 1, 3)
+        # 12 - lib
+        self.lay.addItem(QtGui.QSpacerItem(10, 10), 13, 3, 1, 3)
+        self.lay.addWidget(buttons, 14, 3, 1, 4, QtCore.Qt.AlignRight)
+        self.lay.setRowStretch(9, 10)
+        self.lay.setColumnMinimumWidth(2, 200)
+        self.lay.setColumnMinimumWidth(3, 120)
         self.setLayout(self.lay)
         
     def selectAllCategories(self):
@@ -249,7 +254,11 @@ class dialogMAIN_FORM(QtGui.QDialog):
                 layerValue = PCBconf.softLayers[self.databaseType][layerID]["value"]
                 layerSide = [PCBconf.softLayers[self.databaseType][layerID]["side"], True]  # [layer side, block drop down list TRUE/FALSE]
             else:
-                layerColor = getFromSettings_Color_1('', 4294967295)
+                if j['color'] in PCBconf.eagleColorsDefinition:
+                    layerColor = PCBconf.eagleColorsDefinition[j['color']]
+                else:
+                    layerColor = getFromSettings_Color_1('', 4294967295)
+                
                 layerValue = ['double', u'μm', 34.6, 0, 350]
                 layerSide = [1, False]  # [layer side, block drop down list TRUE/FALSE]
             

@@ -29,6 +29,9 @@ import FreeCAD
 import random
 from PySide import QtCore, QtGui
 import os
+import time
+from shutil import copy2, make_archive, rmtree
+import glob
 #import sys
 from math import sqrt, atan2, sin, cos, radians, pi, hypot, atan
 
@@ -159,17 +162,19 @@ class prepareScriptCopy(QtGui.QDialog):
         self.setWindowTitle(u"Safety copy")
         self.setWindowIcon(QtGui.QIcon(":/data/img/databaseExport.png"))
         #
-        optionSaveDatabase = QtGui.QCheckBox("Database")
-        optionSaveModels = QtGui.QCheckBox("Models")
-        optionSaveFreecadSettings = QtGui.QCheckBox("FreeCAD settings")
+        self.optionSaveDatabase = QtGui.QCheckBox("Database")
+        self.optionSaveModels = QtGui.QCheckBox("Models")
+        self.optionSaveFreecadSettings = QtGui.QCheckBox("FreeCAD settings")
         
-        scriptLogo = QtGui.QLabel("")
-        scriptLogo.setPixmap(QtGui.QPixmap(":/data/img/uklad.png"))
-        
-        path = QtGui.QLineEdit(os.path.expanduser("~"))
-        path.setReadOnly(True)
+        self.path = QtGui.QLineEdit(os.path.expanduser("~"))
+        self.path.setReadOnly(True)
         
         pathChange = QtGui.QPushButton("...")
+        self.connect(pathChange, QtCore.SIGNAL("clicked ()"), self.changePath)
+        
+        
+        self.logs = QtGui.QTextEdit('')
+        self.logs.setReadOnly(True)
         
         buttons = QtGui.QDialogButtonBox()
         buttons.setOrientation(QtCore.Qt.Horizontal)
@@ -180,21 +185,112 @@ class prepareScriptCopy(QtGui.QDialog):
         #
         layPath = QtGui.QHBoxLayout()
         layPath.addWidget(QtGui.QLabel(u"Path"))
-        layPath.addWidget(path)
+        layPath.addWidget(self.path)
         layPath.addWidget(pathChange)
         
         lay = QtGui.QGridLayout(self)
-        lay.addWidget(optionSaveDatabase, 1, 0, 1, 1)
-        lay.addWidget(optionSaveModels, 2, 0, 1, 1)
-        lay.addWidget(optionSaveFreecadSettings, 3, 0, 1, 1)
-        lay.addWidget(scriptLogo, 0, 1, 5, 1)
-        lay.addLayout(layPath, 5, 0, 1, 2)
-        lay.addItem(QtGui.QSpacerItem(10, 20), 6, 0, 1, 2)
-        lay.addWidget(buttons, 7, 0, 1, 2)
-        lay.setRowStretch(8, 10)
+        lay.addWidget(self.optionSaveDatabase, 1, 0, 1, 1)
+        lay.addWidget(self.optionSaveModels, 2, 0, 1, 1)
+        lay.addWidget(self.optionSaveFreecadSettings, 3, 0, 1, 1)
+        #lay.addWidget(scriptLogo, 0, 1, 5, 1)
+        lay.addWidget(self.logs, 0, 2, 6, 1)
+        lay.addItem(QtGui.QSpacerItem(10, 10), 6, 0, 1, 3)
+        lay.addLayout(layPath, 7, 0, 1, 3)
+        lay.addItem(QtGui.QSpacerItem(10, 20), 8, 0, 1, 3)
+        lay.addWidget(buttons, 9, 0, 1, 3)
+        lay.setRowStretch(5, 10)
+    
+    def copyModels(self, path, oldPath, newPath):
+        for i in glob.glob(os.path.join(path, '*')):
+            if os.path.isdir(i):  # folders
+                self.copyModels(i, oldPath, newPath)
+            else:  # files
+                currentPart = i.replace(os.path.join(oldPath, ''), '')
+                [path, fileName] = os.path.split(currentPart)
+                
+                if not os.path.exists(os.path.join(newPath, path)):
+                    os.makedirs(os.path.join(newPath, path))
+                    
+                if not fileName.endswith('fcstd1') and not os.path.exists(os.path.join(newPath, currentPart)):
+                    copy2(os.path.join(oldPath, currentPart), os.path.join(newPath, currentPart))
+    
+    def changePath(self):
+        newFolder = QtGui.QFileDialog.getExistingDirectory(None, 'Change path', self.path.text())
+        if newFolder:
+            self.path.setText(newFolder)
+    
+    def printInfo(self, data):
+        time.sleep(0.05)
+        self.logs.insertHtml(data)
+        QtGui.qApp.processEvents()
     
     def accept(self):
-        FreeCAD.Console.PrintWarning("jest .\n")
+        path = self.path.text().strip()
+        
+        if not os.access(path, os.W_OK):
+            self.logs.append("Error: Access denied!")
+            return False
+
+        try:
+            self.logs.clear()
+            self.printInfo("<span style='color:rgb(0, 0, 0);'>Initializing</span>")
+            
+            mainPath = os.path.join(path, ".freecad_pcb_" + time.strftime('%y%m%d'))
+            os.makedirs(mainPath)  # create tmp directory
+            ##
+            self.printInfo("<br><span style='color:rgb(0, 0, 0);'>Copy database:&nbsp;</span>")
+            if self.optionSaveDatabase.isChecked():
+                copy2(getFromSettings_databasePath(), mainPath)
+                
+                self.printInfo("<span style='color:rgb(0, 255, 0);'>done</span>")
+            else:
+                self.printInfo("skipped")
+            ##
+            if self.optionSaveModels.isChecked():
+                self.printInfo("<br><span style='color:rgb(0, 0, 0);'>Copy models:</span>")
+                
+                modelsDir = os.path.join(mainPath, "models")
+                os.makedirs(modelsDir)
+                
+                if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsPaths", "").strip() != '':
+                    librariesList = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsPaths", "").split(',')
+                else:
+                    librariesList = __currentPath__.replace('command', 'parts')
+                
+                for i in librariesList:
+                    self.printInfo("<br><span style='color:rgb(0, 0, 0);'>&nbsp;&nbsp;&nbsp;&nbsp;{0}:&nbsp;</span>".format(i))
+                    
+                    newPath = os.path.join(modelsDir, os.path.basename(i))
+                    os.makedirs(newPath)
+                    self.copyModels(i, i, newPath)
+                    
+                    self.printInfo("<span style='color:rgb(0, 255, 0);'>done</span>".format(i))
+            else:
+                self.printInfo("<br><span style='color:rgb(0, 0, 0);'>Copy models: skipped</span>")
+            ##
+            self.printInfo("<br><span style='color:rgb(0, 0, 0);'>Copy FreeCAD settings:&nbsp;</span>")
+            if self.optionSaveFreecadSettings.isChecked():
+                data = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB")
+                data.Export(os.path.join(mainPath, 'freecad_pcb_settings.fcparam'))
+                
+                self.printInfo("<span style='color:rgb(0, 255, 0);'>done</span>")
+            else:
+                self.printInfo("skipped")
+            ########
+            self.printInfo("<br><span style='color:rgb(0, 0, 0);'>Preparing zip file:&nbsp;</span>")
+            
+            make_archive(mainPath.replace('.freecad_pcb', 'freecad_pcb'), 'zip', mainPath)
+            self.printInfo("<span style='color:rgb(0, 255, 0);'>done</span>")
+            
+            self.printInfo("<br><span style='color:rgb(0, 0, 0);'>Removing tmp files:&nbsp;</span>")
+            rmtree(mainPath)  # del tmp directory
+            self.printInfo("<span style='color:rgb(0, 255, 0);'>done</span>")
+        except Exception, e:
+            self.printInfo("<br><span style='color:rgb(255, 0, 0);'>Error: {0}!</span>".format(e))
+            return False
+        
+        self.printInfo("<br><span style='color:rgb(0, 255, 0);'>Done!</span>")
+        return True
 
 
 ########################################################################

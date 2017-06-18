@@ -210,7 +210,7 @@ def importBRD(filename, wersjaFormatu):
         #plytka = plytkaPCB.generate(doc, groupBRD, filename)
         plytka = plytkaPCB.generate(doc, groupBRD)
         
-        FreeCAD.Console.PrintWarning('Total time: %i[s]\n' % (time.time() - start))
+        FreeCAD.Console.PrintWarning('\nTotal time: %i[s]\n' % (time.time() - start))
         ######
         FreeCADGui.ActiveDocument.ActiveView.viewAxometric()
         FreeCADGui.ActiveDocument.ActiveView.fitAll()

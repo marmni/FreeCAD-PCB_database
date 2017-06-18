@@ -303,9 +303,9 @@ class dataBase:
             if not self.checkVersion() and not self.cfg2db():
                 raise ConvertError()
             
-            FreeCAD.Console.PrintWarning("Read database\n")
+            FreeCAD.Console.PrintWarning("Read database")
         except Exception, e:
-            FreeCAD.Console.PrintWarning("ERROR: {0}.\n".format(self.errorsDescription(e)))
+            FreeCAD.Console.PrintWarning("ERROR: {0}.".format(self.errorsDescription(e)))
             return False
             
         return True
@@ -371,6 +371,18 @@ class dataBase:
         
         return modelData
     
+    def getPackageByID(self, param):
+        if param <= 0:
+            return False
+        
+        query = self.session.query(Packages).filter(Packages.id == int(param))
+        
+        if query.count() == 0:
+            FreeCAD.Console.PrintWarning("ERROR: {0} (get package).\n".format(self.errorsDescription(e)))
+            return False
+            
+        return query[0]
+        
     def getPackagesByModelID(self, param):
         try:
             query = self.session.query(Packages).filter(Packages.modelID == int(param))

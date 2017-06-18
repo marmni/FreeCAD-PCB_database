@@ -114,17 +114,18 @@ class dialogMAIN(dialogMAIN_FORM):
         for i in programEagle:
             layerNumber = int(i.getAttribute("number"))
             layerName = i.getAttribute("name")
-            #layerColor = int(i.getAttribute("color"))
+            layerColor = int(i.getAttribute("color"))
             
-            dane[layerNumber] = {"name": layerName}
+            dane[layerNumber] = {"name": layerName, "color": layerColor}
         return dane
 
 
 class EaglePCB(mathFunctions):
-    def __init__(self, filename):
+    def __init__(self, filename, parent):
         self.fileName = filename
         self.dialogMAIN = dialogMAIN(self.fileName)
         self.databaseType = "eagle"
+        self.parent = parent
         #
         self.libraries = {}
         self.elements = []
@@ -390,9 +391,8 @@ class EaglePCB(mathFunctions):
 
     def getGlue(self, layerNumber):
         glue = {}
-        dane = self.getSection('plain')
         # line/arc
-        for i in self.getWires(dane, layerNumber):
+        for i in self.getWires(self.projektBRD.getElementsByTagName("plain")[0], [layerNumber]):
             
             if not i['width'] in glue.keys():
                 glue[i['width']] = []
@@ -402,7 +402,7 @@ class EaglePCB(mathFunctions):
             else:
                 glue[i['width']].append(['arc', i['x2'], i['y2'], i['x1'], i['y1'], i['curve'], i['cap']])
         # circle
-        for i in self.getCircles(dane, layerNumber):
+        for i in self.getCircles(self.projektBRD.getElementsByTagName("plain")[0], layerNumber):
             if not i['width'] in glue.keys():
                 glue[i['width']] = []
             
@@ -415,14 +415,16 @@ class EaglePCB(mathFunctions):
             return "pads"
         elif layerNumber in [1, 16]:  # paths
             return "paths"
+        elif layerNumber == 47:  # MEASURES
+            return "measures"
+        elif layerNumber in [35, 36]:  # glue
+            return "glue"
+        elif layerNumber in [39, 40, 41, 42, 43]:  # ConstraintAreas
+            return "constraint"
         else:
             return "silk"
 
     #def generate(self, doc, groupBRD, filename):
-        #if self.dialogMAIN.plytkaPCB_elementy.isChecked():
-            #partsError = self.getParts(self.dialogMAIN.plytkaPCB_elementyKolory.isChecked(), self.dialogMAIN.adjustParts.isChecked(), self.dialogMAIN.plytkaPCB_grupujElementy.isChecked(), self.dialogMAIN.partMinX.value(), self.dialogMAIN.partMinY.value(), self.dialogMAIN.partMinZ.value())
-            #if self.dialogMAIN.plytkaPCB_plikER.isChecked():
-                #self.generateErrorReport(partsError, filename)
         ##  dodatkowe warstwy
         #grp = createGroup_Layers()
         #grp_2 = createGroup_Areas()
@@ -439,15 +441,9 @@ class EaglePCB(mathFunctions):
                 #except:
                     #transp = None
                 
-                #if layerNumber == 47:  # MEASURES
-                    #self.addDimensions(self.getDimensions(), doc, grp, name, self.dialogMAIN.gruboscPlytki.value(), color)
                 ##elif layerNumber == 0:  # annotations
                     ##data = re.findall("<plain>(.+?)</plain>", self.projektBRD, re.MULTILINE|re.DOTALL)[0]
                     ##self.addAnnotations(self.getAnnotations(re.findall('<text (.+?)</text>', data, re.MULTILINE|re.DOTALL)), doc, color)
-                #elif layerNumber in [35, 36]:  # glue
-                    #self.generateGlue(self.getGlue(layerNumber), doc, grp, name, color, layerNumber)
-                #elif layerNumber in [39, 40, 41, 42, 43]:  # ConstraintAreas
-                    #self.generateConstraintAreas(self.getConstraintAreas(layerNumber), doc, layerNumber, grp_2, name, color, transp)
         #return doc
     
     ##############################
@@ -547,10 +543,10 @@ class EaglePCB(mathFunctions):
                     if self.filterHoles(drill, Hmin, Hmax):
                         holesObject.addGeometry(Part.Circle(FreeCAD.Vector(xR, yR, 0.), FreeCAD.Vector(0, 0, 1), drill))
 
-    def getParts(self, koloroweElemnty, adjustParts, groupParts, partMinX, partMinY, partMinZ):
+    def getParts(self):
         self.getLibraries()
         self.getElements()
-        PCB_ER = []
+        parts = []
         
         for i in self.elements:
             if i['side'] == 1:
@@ -560,15 +556,16 @@ class EaglePCB(mathFunctions):
             ######
             EL_Name = ['', i['x'], i['y'], 1.27, i['rot'], side, "bottom-left", False, 'None', '', True]
             EL_Value = ['', i['x'], i['y'], 1.27, i['rot'], side, "bottom-left", False, 'None', '', True]
-            # [txt, x, y, size, rot, side, align, spin, mirror, font, display]
+            ## [txt, x, y, size, rot, side, align, spin, mirror, font, display]
             if i['smashed'] == "yes":
-                for j in self.getAnnotations(re.findall('<attribute (.+?)\n', i['attr']), mode='attr'):
-                    if j[0] == 'NAME':
-                        EL_Name = j
-                    elif j[0] == 'VALUE':
-                        EL_Value = j
+                pass
+                #for j in self.getAnnotations(re.findall('<attribute (.+?)\n', i['attr']), mode='attr'):
+                    #if j[0] == 'NAME':
+                        #EL_Name = j
+                    #elif j[0] == 'VALUE':
+                        #EL_Value = j
             else:
-                for j in self.getAnnotations(re.findall('<text (.+?)</text>', self.libraries[i['library']][i['package']], re.MULTILINE|re.DOTALL)):
+                for j in self.getAnnotations(self.libraries[i['library']][i['package']].getElementsByTagName("text")):
                     x1 = i['x'] + j[1]
                     y1 = i['y'] + j[2]
                     
@@ -592,37 +589,14 @@ class EaglePCB(mathFunctions):
                     elif j[0] == '&gt;VALUE' and EL_Value[0] == '':
                         j[0] = 'VALUE'
                         EL_Value = j
-            
+                
             #newPart = [[i['name'], i['package'], i['value'], i['x'], i['y'], i['rot'], side, i['library']], EL_Name, EL_Value]
             #wyn = self.addPart(newPart, koloroweElemnty, adjustParts, groupParts, partMinX, partMinY, partMinZ)
             # <uros@isotel.eu> modified package here and 7 lines below
             newPart = [[i['name'], i['freecad_package'], i['value'], i['x'], i['y'], i['rot'], side, i['library']], EL_Name, EL_Value]
-            wyn = self.addPart(newPart, koloroweElemnty, adjustParts, groupParts, partMinX, partMinY, partMinZ)
-            #
-            if wyn[0] == 'Error':  # lista brakujacych elementow
-                partNameTXT = partNameTXT_label = self.generateNewLabel(i['name'])
-                if isinstance(partNameTXT, unicode):
-                    partNameTXT = unicodedata.normalize('NFKD', partNameTXT).encode('ascii', 'ignore')
-                
-                #PCB_ER.append([partNameTXT, i['package'], i['value'], i['library']])
-                PCB_ER.append([partNameTXT, i['freecad_package'], i['value'], i['library']])
+            parts.append(newPart)
         ####
-        return PCB_ER
-
-    def getConstraintAreas(self, layerNumber):
-        areas = []
-        dane = self.getSection('plain')
-        # kola
-        for i in self.getCircles(dane, layerNumber):
-            areas.append(['circle', i['x'], i['y'], i['r'], i['width']])
-        # kwadraty
-        for i in self.getRectangle(dane, layerNumber):
-            areas.append(['rect', i['x1'], i['y1'], i['x2'], i['y2'], 0, i['rot']])
-        # polygon
-        for i in self.getPolygons(dane, layerNumber):
-            areas.append(['polygon', self.getPolygon(i)])
-        #
-        return areas
+        return parts
 
     #def getPolygons(self, layerNumber):
         #if layerNumber == 998:
@@ -682,8 +656,22 @@ class EaglePCB(mathFunctions):
 
                 return wartosc
     
-    def addStandardShapes(self, dane, layerNew, layerNumber, parent=None):
-        if  parent:
+    def getConstraintAreas(self, layerNumber):
+        areas = []
+        # kola
+        for i in self.getCircles(self.projektBRD.getElementsByTagName("plain")[0], layerNumber):
+            areas.append(['circle', i['x'], i['y'], i['r'], i['width']])
+        # kwadraty
+        for i in self.getRectangle(self.projektBRD.getElementsByTagName("plain")[0], layerNumber):
+            areas.append(['rect', i['x1'], i['y1'], i['x2'], i['y2'], 0, i['rot']])
+        # polygon
+        for i in self.getPolygons(self.projektBRD.getElementsByTagName("plain")[0], layerNumber):
+            areas.append(['polygon', self.getPolygon(i)])
+        #
+        return areas
+    
+    def addStandardShapes(self, dane, layerNew, layerNumber, display=[True, True, True, True], parent=None):
+        if parent:
             X = parent['x']
             Y = parent['y']
         else:
@@ -691,49 +679,69 @@ class EaglePCB(mathFunctions):
             Y = 0
         
         # linie/luki
-        for i in self.getWires(dane, layerNumber, [X, Y]):
-            if not i['curve']:
-                layerNew.addLineWidth(i['x1'], i['y1'], i['x2'], i['y2'], i['width'])
+        if display[0]:
+            for i in self.getWires(dane, layerNumber, [X, Y]):
+                if not i['curve']:
+                    layerNew.addLineWidth(i['x1'], i['y1'], i['x2'], i['y2'], i['width'])
+                    if parent:
+                        layerNew.addRotation(parent['x'], parent['y'], parent['rot'])
+                        layerNew.setChangeSide(parent['x'], parent['y'], parent['side'])
+                    layerNew.setFace()
+                else:
+                    layerNew.addArcWidth([i['x1'], i['y1']], [i['x2'], i['y2']], i['curve'], i['width'], i['cap'])
+                    if parent:
+                        layerNew.addRotation(parent['x'], parent['y'], parent['rot'])
+                        layerNew.setChangeSide(parent['x'], parent['y'], parent['side'])
+                    layerNew.setFace()
+        # okregi
+        if display[1]:
+            for i in self.getCircles(dane, layerNumber, [X, Y]):
+                layerNew.addCircle(i['x'], i['y'], i['r'], i['width'])
                 if parent:
                     layerNew.addRotation(parent['x'], parent['y'], parent['rot'])
                     layerNew.setChangeSide(parent['x'], parent['y'], parent['side'])
                 layerNew.setFace()
-            else:
-                layerNew.addArcWidth([i['x1'], i['y1']], [i['x2'], i['y2']], i['curve'], i['width'], i['cap'])
+                if i['width'] > 0:
+                    layerNew.circleCutHole(i['x'], i['y'], i['r'] - i['width'] / 2.)
+        # kwadraty
+        if display[2]:
+            for i in self.getRectangle(dane, layerNumber, [X, Y]):
+                dx = i['x1'] - i['x2']
+                dy = i['y1'] - i['y2']
+                
+                layerNew.addRectangle(i['x1'], i['y1'], i['x2'], i['y2'])
+                layerNew.addRotation(i['x1'] - (dx / 2.), i['y1'] - (dy / 2.), i['rot'])
                 if parent:
                     layerNew.addRotation(parent['x'], parent['y'], parent['rot'])
                     layerNew.setChangeSide(parent['x'], parent['y'], parent['side'])
                 layerNew.setFace()
         ## polygon
-        for i in self.getPolygons(dane, layerNumber):
-            if parent:
-                layerNew.addPolygon(self.getPolygon(i, parent['x'], parent['y']))
-                layerNew.addRotation(parent['x'], parent['y'], parent['rot'])
-                layerNew.setChangeSide(parent['x'], parent['y'], parent['side'])
-            else:
-                layerNew.addPolygon(self.getPolygon(i))
-            layerNew.setFace()
-        # okregi
-        for i in self.getCircles(dane, layerNumber, [X, Y]):
-            layerNew.addCircle(i['x'], i['y'], i['r'], i['width'])
-            if parent:
-                layerNew.addRotation(parent['x'], parent['y'], parent['rot'])
-                layerNew.setChangeSide(parent['x'], parent['y'], parent['side'])
-            layerNew.setFace()
-            if i['width'] > 0:
-                layerNew.circleCutHole(i['x'], i['y'], i['r'] - i['width'] / 2.)
-        # kwadraty
-        for i in self.getRectangle(dane, layerNumber, [X, Y]):
-            dx = i['x1'] - i['x2']
-            dy = i['y1'] - i['y2']
+        if display[3]:
+            for i in self.getPolygons(dane, layerNumber):
+                if parent:
+                    layerNew.addPolygon(self.getPolygon(i, parent['x'], parent['y']))
+                    layerNew.addRotation(parent['x'], parent['y'], parent['rot'])
+                    layerNew.setChangeSide(parent['x'], parent['y'], parent['side'])
+                else:
+                    layerNew.addPolygon(self.getPolygon(i))
+                layerNew.setFace()
+    
+    def getDimensions(self):
+        wymiary = []
+        #
+        for i in self.projektBRD.getElementsByTagName("plain")[0].getElementsByTagName("dimension"):
+            x1 = float(i.getAttribute('x1'))
+            y1 = float(i.getAttribute('y1'))
+            x2 = float(i.getAttribute('x2'))
+            y2 = float(i.getAttribute('y2'))
+            x3 = float(i.getAttribute('x3'))
+            y3 = float(i.getAttribute('y3'))
+            dtype = i.getAttribute('dtype')
             
-            layerNew.addRectangle(i['x1'], i['y1'], i['x2'], i['y2'])
-            layerNew.addRotation(i['x1'] - (dx / 2.), i['y1'] - (dy / 2.), i['rot'])
-            if parent:
-                layerNew.addRotation(parent['x'], parent['y'], parent['rot'])
-                layerNew.setChangeSide(parent['x'], parent['y'], parent['side'])
-            layerNew.setFace()
-
+            wymiary.append([x1, y1, x2, y2, x3, y3, dtype])
+        
+        return wymiary
+        
     def getPads(self, layerNew, layerNumber, layerSide):
         MAX_P = self.getSettings('rlMaxPadTop')
         MIN_P = self.getSettings('rlMinPadTop')
@@ -900,8 +908,8 @@ class EaglePCB(mathFunctions):
                         layerNew.setChangeSide(i['x'], i['y'], i['side'])
                         layerNew.setFace()
 
-    def getSilkLayer(self, layerNew, layerNumber):
-        self.addStandardShapes(self.projektBRD.getElementsByTagName("plain")[0], layerNew, [layerNumber])
+    def getSilkLayer(self, layerNew, layerNumber, display=[True, True, True, True]):
+        self.addStandardShapes(self.projektBRD.getElementsByTagName("plain")[0], layerNew, [layerNumber], display)
         
     def getSilkLayerModels(self, layerNew, layerNumber):
         self.getLibraries()
@@ -919,92 +927,68 @@ class EaglePCB(mathFunctions):
             else:
                 szukanaWarstwa = layerNumber
             ####
-            self.addStandardShapes(self.libraries[i['library']][i['package']], layerNew, [szukanaWarstwa], i)
+            self.addStandardShapes(self.libraries[i['library']][i['package']], layerNew, [szukanaWarstwa], parent=i)
         
-
     def getAnnotations(self, dane1, mode='anno'):
         adnotacje = []
         #
         for i in dane1:
-            if not isinstance(i, str):
-                i = ' '.join(i)
+            x = float(i.getAttribute('x'))
+            y = float(i.getAttribute('y'))
+            size = float(i.getAttribute('size'))
             
-            x = float(re.search('x="(.+?)"', i).groups()[0])
-            y = float(re.search('y="(.+?)"', i).groups()[0])
-            size = float(re.search('size="(.+?)"', i).groups()[0])
-        
-            try:
-                mainROT = re.search('rot="(.+?)"', i).groups()[0]
-                
+            if i.getAttribute('rot'):
                 try:
-                    rot = float(re.search('R(.*)', mainROT).groups()[0])  # kat o jaki zostana obrocone elementy
+                    rot = float(re.search('R(.*)', i.getAttribute('rot')).groups()[0])  # kat o jaki zostana obrocone elementy
                 except:
                     rot = 0  # kat o jaki zostana obrocone elementy
-                    
-                try:
-                    float(re.search('MR(.*)', mainROT).groups()[0])  # dolna warstwa
+                
+                if i.getAttribute('rot').startswith('MR'):  # bottom layer
                     mirror = 1
-                except:
+                else:
                     mirror = 0
                     
-                try:
-                    float(re.search('SR(.*)', i).groups()[0])  # napis bez mirrora
+                if i.getAttribute('rot').startswith('SR'):  # napis bez mirrora
                     spin = True
-                except:
+                else:
                     spin = False
-            except:
+                
+            else:
                 rot = 0  # kat o jaki zostana obrocone elementy
                 mirror = 0
                 spin = False
-
-            if int(re.search('layer="(.+?)"', i).groups()[0]) in [16, 22, 24, 26, 28, 52]:
-                side = 'BOTTOM'
+            
+            #if int(re.search('layer="(.+?)"', i).groups()[0]) in [16, 22, 24, 26, 28, 52]:
+                #side = 'BOTTOM'
+            #else:
+                #side = 'TOP'
+            side = 'TOP'
+            
+            if i.getAttribute('align'):  # napis bez mirrora
+                align = i.getAttribute('align')
             else:
-                side = 'TOP'
-
-            try:
-                align = float(re.search('align="(.+?)"', i).groups()[0])  # napis bez mirrora
-            except:
                 align = "bottom-left"
-            
+            ####
             if mode == 'anno':
-                try:
-                    txt = re.search('>(.*)', i, re.MULTILINE|re.DOTALL).groups()[0]
-                except AttributeError:
-                    txt = ''
+                txt = i.firstChild.nodeValue
             else:
-                txt = re.search('name="(.+?)"', i).groups()[0]
+                txt = i.getAttribute('name')
             
-            #try:
-                #font = dane1[i].getAttribute("font")
-            #except:
-            font = 'proportional'
-                
-            try:
-                display = re.search('display="(.+?)"', i).groups()[0]
-                
-                if display == "off":
+            
+            if i.getAttribute('font'):
+                font = i.getAttribute('font')
+            else:
+                font = 'proportional'
+            
+            if i.getAttribute('display'):
+                if i.getAttribute('display') == "off":
                     display = False
                 else:
                     display = True
-            except:
+            else:
                 display = True
             
             adnotacje.append([txt, x, y, size, rot, side, align, spin, mirror, font, display])
-        #
         return adnotacje
 
-    def getDimensions(self):
-        wymiary = []
-        #
-        data = self.getSection('plain')
-        for i in re.findall('<dimension x1="(.+?)" y1="(.+?)" x2="(.+?)" y2="(.+?)" x3="(.+?)" y3="(.+?)" textsize="(.+?) layer=".+?"/>', data):
-            x1 = float(i[0])
-            y1 = float(i[1])
-            x2 = float(i[2])
-            y2 = float(i[3])
-            x3 = float(i[4])
-            y3 = float(i[5])
-        
-            wymiary.append([x1, y1, x2, y2, x3, y3])
-        return wymiary
+    

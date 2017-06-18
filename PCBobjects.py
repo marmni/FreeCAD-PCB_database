@@ -2135,9 +2135,9 @@ class constraintAreaObject:
         obj.Proxy = self
         
     def updatePosition_Z(self, fp, dummy=None):
-        if 'topSide' in self.Type:
+        if self.Type.startswith('t'):
             self.z = getPCBheight()[1]
-        elif 'bothSide' in self.Type:  # gorna oraz dolna warstwa
+        elif self.Type.startswith('v'):  # gorna oraz dolna warstwa
             self.z = -0.5
             self.layerHeight = getPCBheight()[1] + 1.0
         else:  # bottomSide
@@ -2147,11 +2147,11 @@ class constraintAreaObject:
         self.createGeometry(fp)
 
     def setLayerSide(self):
-        if 'topSide' in self.Type:
+        if self.Type.startswith('t'):
             self.layerReversed = False
             self.layerHeight = 0.5
             self.z = getPCBheight()[1]
-        elif 'bothSide' in self.Type:  # gorna oraz dolna warstwa
+        elif self.Type.startswith('v'):  # gorna oraz dolna warstwa
             self.layerReversed = False
             self.layerHeight = getPCBheight()[1] + 1.0
             self.z = -0.5

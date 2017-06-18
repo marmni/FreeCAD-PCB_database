@@ -713,8 +713,11 @@ class dodajElement(QtGui.QDialog):
         self.reloadList()
     
     def prepareCopy(self):
-        dial = prepareScriptCopy()
-        dial.exec_()
+        try:
+            dial = prepareScriptCopy()
+            dial.exec_()
+        except Exception, e:
+            FreeCAD.Console.PrintWarning(u"Error: {0} \n".format(e))
 
     def clearData(self):
         ''' clean form '''

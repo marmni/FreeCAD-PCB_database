@@ -46,8 +46,7 @@ from command.PCBannotations import createAnnotation
 
 
 class partsManaging(mathFunctions):
-    
-    def __init__(self):
+    def __init__(self, databaseType=None):
         self.objColors = {}
         
         # allSocked - definicja zachowania przy dodawaniu podstawki dla wszystkich obeiktow
@@ -55,6 +54,7 @@ class partsManaging(mathFunctions):
         #    0 - zapytaj o dodanie podstawki (def)
         #    1 - dodaj podstawki dla wszystkich obiektow
         self.allSocked = 0
+        self.databaseType = databaseType
     
     def adjustRotation(self, angle):
         if angle > 360 or angle < 360:  # max = 360deg; min= -360deg
@@ -199,11 +199,16 @@ class partsManaging(mathFunctions):
             if not koloroweElemnty:
                 step_model.Shape = Part.read(filePath)
             else:
-                active = FreeCAD.ActiveDocument.Name
-                step_model = self.getPartShape(filePath, step_model, koloroweElemnty)
-                FreeCAD.setActiveDocument(active)
-                FreeCAD.ActiveDocument=FreeCAD.getDocument(active)
-                FreeCADGui.ActiveDocument=FreeCADGui.getDocument(active)
+                try:
+                    active = FreeCAD.ActiveDocument.Name
+                    step_model = self.getPartShape(filePath, step_model, koloroweElemnty)
+                    FreeCAD.setActiveDocument(active)
+                    FreeCAD.ActiveDocument=FreeCAD.getDocument(active)
+                    FreeCADGui.ActiveDocument=FreeCADGui.getDocument(active)
+                    
+                    step_model.Shape.isValid()
+                except:
+                    step_model.Shape = Part.read(filePath)
             
             obj = partObject(step_model)
             step_model.Package = u"{0}".format(fileData[3]['name'])
@@ -866,6 +871,9 @@ class partsManaging(mathFunctions):
         self.__SQL__.connect()
 
     def partExist(self, info, model, showDial=True):
+        if not self.databaseType:
+            return [False]
+        
         try:
             name = info[1]
             
