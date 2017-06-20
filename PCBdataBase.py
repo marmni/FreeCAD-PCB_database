@@ -41,6 +41,7 @@ import FreeCAD
 from PCBfunctions import getFromSettings_databasePath
 
 __currentPath__ = os.path.abspath(os.path.join(os.path.dirname(__file__), ''))
+__scriptVersion__ = 5.0
 Base = declarative_base()
 
 class Categories(Base):
@@ -152,44 +153,16 @@ class dataBase_CFG():
 class dataBase:
     def __init__(self):
         self.session = None
+    
+    def checkVersion(self):
+        version = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetFloat("Version", 0.0)
         
-    def  checkVersion(self):
-        '''  '''
-        #modelsCategories = {
-            #1: ['Capacitors', ''],
-            #2: ['Resistors', ''],
-            #3: ['Relays', ''],
-            #4: ['Rectifiers', ''],
-            #5: ['Heatsinks', ''],
-            #6: ['Crystals', ''],
-            #7: ['Diodes', ''],
-            #8: ['Led', ''],
-            #9: ['Buzzers', ''],
-            #10: ['Goldpins', ''],
-            #11: ['Jumpers', ''],
-            #12: ['Packages', ''],
-            #13: ['con-phoenix', ''],
-            #14: ['Varistors', ''],
-            #15: ["Connectors", ""],
-            #16: ["Potentiometers", ""],
-            #17: ["Batteries", ""],
-            #18: ["con-harting", ""],
-            #19: ["Packages-*BGA", ""],
-            #20: ["Display", ""],
-            #21: ["Switch-dil", ""],
-            #22: ["Inductor", ""]
-        #}
-        
-        #FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('partsCategories', json.dumps(modelsCategories))
-        #
-        oldDB = getFromSettings_databasePath().replace(".db", ".cfg")
-        
-        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", "").strip() != '':
-            oldCategories = True
+        if float(version) < __scriptVersion__:
+            oldDatabase = True
         else:
-            oldCategories = False
+            oldDatabase = False
         
-        if os.path.isfile(oldDB) and oldCategories:
+        if oldDatabase:
             dial = QtGui.QMessageBox()
             dial.setText(u"Old database format detected - upgrading database format is required. This may take several seconds.")
             dial.setWindowTitle("Caution!")
@@ -286,10 +259,11 @@ class dataBase:
         data = getFromSettings_databasePath()
         shutil.move(data.replace(".db", ".cfg"), data.replace(".db", ".cfg") + "_old")
         
-        # deleting old categories
-        if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", '').strip() != '':
-            FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('partsCategories', json.dumps(""))
+        ## deleting old categories
+        #if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", '').strip() != '':
+            #FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('partsCategories', json.dumps(""))
         
+        FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetFloat("Version", __scriptVersion__)
         return True
         
     def connect(self):
@@ -300,8 +274,8 @@ class dataBase:
             Session = sessionmaker(bind=engine)
             self.session = Session()
             
-            if not self.checkVersion() and not self.cfg2db():
-                raise ConvertError()
+            if not self.checkVersion():
+                self.cfg2db()
             
             FreeCAD.Console.PrintWarning("Read database")
         except Exception, e:
@@ -1113,5 +1087,12 @@ class dataBase:
             #FreeCAD.Console.PrintWarning("{0} \n".format(e))
         
         #return False
+
+
+
+
+
+
+
 
 

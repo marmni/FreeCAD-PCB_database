@@ -33,7 +33,6 @@ __title__="FreeCAD Printed Circuit Board Workbench - Init file"
 __author__ = "marmni <marmni@onet.eu>"
 __url__ = ["http://www.freecadweb.org"]
 
-
 # ICONS
 # drill-icon.png -> http://www.fatcow.com/free-icons
 
@@ -148,7 +147,7 @@ class PCB(Workbench):
             FreeCADGui.pcbToolBarView.Activated()
         if hasattr(FreeCADGui,"sketcherToolBar"):
             FreeCADGui.sketcherToolBar.Activated()
-
+        
     def Deactivated(self):
         if hasattr(FreeCADGui, "pcbToolBar"):
             FreeCADGui.pcbToolBar.Deactivated()
