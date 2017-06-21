@@ -210,14 +210,17 @@ class dataBase:
             result["socketIDSocket"] = eval(self.clearString(data["add_socket"]))[0]
             
             categoryID = int(data["category"])
-            if categoryID in [-1, 0]:
-                result["categoryID"] = 0
-            else:
-                category = self.getCategoryByName(categoriesList[categoryID][0])
-                if category[0]:
-                    result["categoryID"] = category[1].id
-                else:
+            if categoryID in categoriesList.keys():
+                if categoryID in [-1, 0]:
                     result["categoryID"] = 0
+                else:
+                    category = self.getCategoryByName(categoriesList[categoryID][0])
+                    if category[0]:
+                        result["categoryID"] = category[1].id
+                    else:
+                        result["categoryID"] = 0
+            else:
+                result["categoryID"] = 0
             
             if result["socketIDSocket"]:
                 result["socketID"] = 0
