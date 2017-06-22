@@ -257,7 +257,8 @@ class dataBase:
         
         # database file update - position/name
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("databasePath", "").strip() != '':
-            FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('databasePath', json.dumps(data.replace(".cfg", ".db")))
+            database = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("databasePath", "").strip()
+            FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('databasePath', database.replace('cfg', 'db'))
         
         data = getFromSettings_databasePath()
         shutil.move(data.replace(".db", ".cfg"), data.replace(".db", ".cfg") + "_old")
@@ -282,9 +283,7 @@ class dataBase:
             
             FreeCAD.Console.PrintWarning("Read database")
         except Exception, e:
-            FreeCAD.Console.PrintWarning("ERROR: {0}.".format(self.errorsDescription(e)))
             return False
-            
         return True
     
     def clearString(self, value, errors="replace"):
