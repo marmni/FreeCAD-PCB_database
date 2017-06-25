@@ -114,7 +114,8 @@ class partsManaging(mathFunctions):
         
         fuse = []
         for i in FreeCAD.ActiveDocument.Objects:
-            if i.isDerivedFrom("Part::Feature") and i.ViewObject.Visibility and len(i.Shape.Solids):
+            #if i.isDerivedFrom("Part::Feature") and i.ViewObject.Visibility:
+            if i.ViewObject.Visibility and hasattr(i, 'Shape') and hasattr(i.Shape, 'ShapeType') and i.Shape.ShapeType == 'Solid':
                 fuse.append(i)
         try:
             if len(fuse) == 1:
@@ -199,16 +200,16 @@ class partsManaging(mathFunctions):
             if not koloroweElemnty:
                 step_model.Shape = Part.read(filePath)
             else:
+                active = FreeCAD.ActiveDocument.Name
                 try:
-                    active = FreeCAD.ActiveDocument.Name
                     step_model = self.getPartShape(filePath, step_model, koloroweElemnty)
-                    FreeCAD.setActiveDocument(active)
-                    FreeCAD.ActiveDocument=FreeCAD.getDocument(active)
-                    FreeCADGui.ActiveDocument=FreeCADGui.getDocument(active)
-                    
                     step_model.Shape.isValid()
                 except:
                     step_model.Shape = Part.read(filePath)
+                
+                FreeCAD.setActiveDocument(active)
+                FreeCAD.ActiveDocument=FreeCAD.getDocument(active)
+                FreeCADGui.ActiveDocument=FreeCADGui.getDocument(active)
             
             obj = partObject(step_model)
             step_model.Package = u"{0}".format(fileData[3]['name'])
