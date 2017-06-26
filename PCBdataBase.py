@@ -158,11 +158,6 @@ class dataBase:
         version = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetFloat("Version", 0.0)
         
         if float(version) < __scriptVersion__:
-            oldDatabase = True
-        else:
-            oldDatabase = False
-        
-        if oldDatabase:
             dial = QtGui.QMessageBox()
             dial.setText(u"Old database format detected - upgrading database format is required. This may take several seconds.")
             dial.setWindowTitle("Caution!")
@@ -259,9 +254,12 @@ class dataBase:
         if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("databasePath", "").strip() != '':
             database = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("databasePath", "").strip()
             FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('databasePath', database.replace('cfg', 'db'))
-        
-        data = getFromSettings_databasePath()
-        shutil.move(data.replace(".db", ".cfg"), data.replace(".db", ".cfg") + "_old")
+            
+        try:
+            data = getFromSettings_databasePath()
+            shutil.move(data.replace(".db", ".cfg"), data.replace(".db", ".cfg") + "_old")
+        except Exception, e:
+            pass
         
         ## deleting old categories
         #if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", '').strip() != '':
