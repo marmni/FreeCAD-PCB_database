@@ -54,8 +54,8 @@ from formats.eagle import EaglePCB
 #from formats.geda import gEDA_PCB
 #from formats.fidocadj import FidoCadJ_PCB
 #from formats.razen import Razen_PCB
-#from formats.kicad_v3 import KiCadv3_PCB
-#from formats.kicad_v4 import KiCadv4_PCB
+from formats.kicad_v3 import KiCadv3_PCB
+from formats.kicad_v4 import KiCadv4_PCB
 #from formats.idf_v2 import IDFv2_PCB
 #from formats.idf_v3 import IDFv3_PCB
 #from formats.idf_v4 import IDFv4_PCB
@@ -72,6 +72,7 @@ class mainPCB(partsManaging):
         partsManaging.__init__(self, wersjaFormatu)
         self.projektBRD = None
         self.projektBRDName = None
+        self.wersjaFormatu = None
         
         if wersjaFormatu == "eagle":
             self.wersjaFormatu = EaglePCB(filename, self)
@@ -83,10 +84,10 @@ class mainPCB(partsManaging):
             #self.wersjaFormatu = FidoCadJ_PCB(filename)
         #elif wersjaFormatu == "razen":
             #self.wersjaFormatu = Razen_PCB()
-        #elif wersjaFormatu == "kicad_v3":
-            #self.wersjaFormatu = KiCadv3_PCB(filename)
-        #elif wersjaFormatu == "kicad_v4":
-            #self.wersjaFormatu = KiCadv4_PCB(filename)
+        elif wersjaFormatu == "kicad_v3":
+            self.wersjaFormatu = KiCadv3_PCB(filename, self)
+        elif wersjaFormatu == "kicad_v4":
+            self.wersjaFormatu = KiCadv4_PCB(filename, self)
         #elif wersjaFormatu == "idf_v2":
             #self.wersjaFormatu = IDFv2_PCB(filename)
         #elif wersjaFormatu == "idf_v3":
@@ -188,7 +189,7 @@ class mainPCB(partsManaging):
             self.generateErrorReport(errors, self.projektBRDName)
     
     def generateGlue(self, doc, grp, layerName, layerColor, layerNumber, layerSide):
-        for i, j in self.wersjaFormatu.getGlue(layerNumber).items():
+        for i, j in self.wersjaFormatu.getGlue([layerNumber, layerName]).items():
             ser = doc.addObject('Sketcher::SketchObject', "Sketch_{0}".format(layerName))
             ser.ViewObject.Visibility = False
             for k in j:
@@ -240,8 +241,8 @@ class mainPCB(partsManaging):
         
         layerGRP.addObject(grp)
     
-    def generateSilkLayer(self, doc, layerNumber, grp, layerName, layerColor, defHeight, layerSide, layerVariant):
-        layerName = "{0}_{1}".format(layerName, layerNumber)
+    def generateSilkLayer(self, doc, layerNumber, grp, layerNameO, layerColor, defHeight, layerSide, layerVariant):
+        layerName = "{0}_{1}".format(layerNameO, layerNumber)
         #layerSide = softLayers[self.wersjaFormatu.databaseType][layerNumber]['side']
         layerType = [layerName]
         #
@@ -252,14 +253,14 @@ class mainPCB(partsManaging):
         layerNew.defHeight = defHeight
         #
         if layerVariant == "paths":
-            self.wersjaFormatu.getSilkLayer(layerNew, layerNumber, [True, True, True, False])
-            self.wersjaFormatu.getPaths(layerNew, layerNumber)
+            self.wersjaFormatu.getSilkLayer(layerNew, [layerNumber, layerNameO], [True, True, True, False])
+            self.wersjaFormatu.getPaths(layerNew, [layerNumber, layerNameO], [True, True, True, False])
         else:
-            self.wersjaFormatu.getSilkLayer(layerNew, layerNumber)
-            self.wersjaFormatu.getSilkLayerModels(layerNew, layerNumber)
+            self.wersjaFormatu.getSilkLayer(layerNew, [layerNumber, layerNameO])
+            self.wersjaFormatu.getSilkLayerModels(layerNew, [layerNumber, layerNameO])
                 
             if layerVariant == "pads":
-                self.wersjaFormatu.getPads(layerNew, layerNumber, layerSide)
+                self.wersjaFormatu.getPads(layerNew, [layerNumber, layerNameO], layerSide)
         #
         layerNew.generuj(layerS)
         layerNew.updatePosition_Z(layerS)
@@ -288,7 +289,7 @@ class mainPCB(partsManaging):
             FreeCADGui.activeDocument().PCB_Border.Visibility = False
             self.updateView()
         except Exception, e:
-             self.printInfo('{0}'.format(), 'error')
+            self.printInfo(u'{0}'.format(e), 'error')
         else:
             self.printInfo('done')
         
@@ -306,7 +307,7 @@ class mainPCB(partsManaging):
             doc.Board.Holes = doc.PCB_Holes
             doc.recompute()
         except Exception, e:
-             self.printInfo('{0}'.format(), 'error')
+            self.printInfo(u'{0}'.format(e), 'error')
         else:
             self.printInfo('done')
     
@@ -398,21 +399,7 @@ class mainPCB(partsManaging):
             FreeCADGui.activeDocument().getObject(a.Name).Transparency = layerTransparent
             FreeCADGui.activeDocument().getObject(a.Name).DisplayMode = 1
             self.updateView()
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
-        
+    
     def generatePolygons(self, data, doc, group, layerName, layerColor, layerNumber):
         for i in data[0]:
             for j in i: # polygons
@@ -512,4 +499,3 @@ class mainPCB(partsManaging):
             annotation.generate()
             annotation.addToAnnotations()
         
-    

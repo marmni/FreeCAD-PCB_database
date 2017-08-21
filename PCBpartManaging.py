@@ -879,46 +879,47 @@ class partsManaging(mathFunctions):
             name = info[1]
             
             databaseType = self.databaseType
-            if databaseType == 'kicad_v4':
+            if databaseType in ['kicad_v3', 'kicad_v4']:
                 databaseType = 'kicad'
-            #
-            modelInfo = getExtensionInfo(info, 'model')
-            if modelInfo:  # kicad users
-                [found, path] = partExistPath(modelInfo['path'])
-                if found:
-                    at = modelInfo['at']
-                    modelInfo.pop('at')
-                    rotate = modelInfo['rotate']
-                    modelInfo.pop('rotate')
-
-                    #if databaseType == 'kicad': 
-                        # This is what I think how FreeCAD-PCB places objects.
-                        # 
-                        # 1) After loading the model, it will move the object so that it centers at the origin.
-                        # 2) Rotate the object with the angles stored in the database using x, y and z as rotation 
-                        #    axis. In other word, FreeCAD-PCB stores the rotation as yaw, pitch and roll.
-                        # 3) Move the object to its final position using the translation stored in the database.
-                        #
-                        # However, kicad has no step 1), which is why we need to adjust the placement as follow.
-                        # Do a yaw, pitch, roll rotation of the object center vector. Add the resulting vector
-                        # to the translation.
-                        #pos = FreeCAD.Placement(\
-                                    #FreeCAD.Base.Vector(0.0,0.0,0.0), \
-                                    #FreeCAD.Rotation(rotate[0], rotate[1], rotate[2]), \
-                                    #FreeCAD.Base.Vector(0.0,0.0,0.0)).multVec(shape.BoundBox.Center)
-                        #at[0] += pos.x
-                        #at[1] += pos.y
-                        #at[2] += pos.z
-
-                    modelSoft = [name,supSoftware[databaseType]['name']]
-                    modelSoft.extend(at)
-                    modelSoft.extend(rotate)
-                    modelInfo['soft'] = str([modelSoft])
-
-                    return [True, path, '', modelSoft, -1]; 
-            #################
             
+            #
+            #modelInfo = getExtensionInfo(info, 'model')
+            #if modelInfo:  # kicad users
+                #[found, path] = partExistPath(modelInfo['path'])
+                #if found:
+                    #at = modelInfo['at']
+                    #modelInfo.pop('at')
+                    #rotate = modelInfo['rotate']
+                    #modelInfo.pop('rotate')
+
+                    ##if databaseType == 'kicad': 
+                        ## This is what I think how FreeCAD-PCB places objects.
+                        ## 
+                        ## 1) After loading the model, it will move the object so that it centers at the origin.
+                        ## 2) Rotate the object with the angles stored in the database using x, y and z as rotation 
+                        ##    axis. In other word, FreeCAD-PCB stores the rotation as yaw, pitch and roll.
+                        ## 3) Move the object to its final position using the translation stored in the database.
+                        ##
+                        ## However, kicad has no step 1), which is why we need to adjust the placement as follow.
+                        ## Do a yaw, pitch, roll rotation of the object center vector. Add the resulting vector
+                        ## to the translation.
+                        ##pos = FreeCAD.Placement(\
+                                    ##FreeCAD.Base.Vector(0.0,0.0,0.0), \
+                                    ##FreeCAD.Rotation(rotate[0], rotate[1], rotate[2]), \
+                                    ##FreeCAD.Base.Vector(0.0,0.0,0.0)).multVec(shape.BoundBox.Center)
+                        ##at[0] += pos.x
+                        ##at[1] += pos.y
+                        ##at[2] += pos.z
+
+                    #modelSoft = [name,supSoftware[databaseType]['name']]
+                    #modelSoft.extend(at)
+                    #modelSoft.extend(rotate)
+                    #modelInfo['soft'] = str([modelSoft])
+
+                    #return [True, path, '', modelSoft, -1]; 
+            #################
             package = self.__SQL__.findPackage(name, supSoftware[databaseType]['name'])
+            
             if package:
                 modelData = self.__SQL__.getModelByID(package.modelID)
                 
@@ -949,7 +950,7 @@ class partsManaging(mathFunctions):
                     else:
                         return [False]
                 else:
-                    return [False] 
+                    return [False]
             return [False]
         except Exception, e:
             FreeCAD.Console.PrintWarning(u"Error partExist(): {0} \n".format(e))

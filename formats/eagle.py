@@ -37,6 +37,7 @@ from PCBobjects import *
 from dialogMAIN_FORM import dialogMAIN_FORM
 from command.PCBgroups import *
 from PCBfunctions import mathFunctions
+from PCBconf import eagleColorsDefinition
 
 
 def getSettings(projektBRD, paramName, tryb=True):
@@ -114,7 +115,11 @@ class dialogMAIN(dialogMAIN_FORM):
         for i in programEagle:
             layerNumber = int(i.getAttribute("number"))
             layerName = i.getAttribute("name")
-            layerColor = int(i.getAttribute("color"))
+            
+            if int(i.getAttribute("color")) in eagleColorsDefinition:
+                layerColor = eagleColorsDefinition[int(i.getAttribute("color"))]
+            else:
+                layerColor = None
             
             dane[layerNumber] = {"name": layerName, "color": layerColor}
         return dane
@@ -129,6 +134,9 @@ class EaglePCB(mathFunctions):
         #
         self.libraries = {}
         self.elements = []
+    
+    def setProject(self):
+        self.projektBRD = minidom.parse(self.fileName)
     
     def Draft2Sketch(self, elem, sketch):
         return (DraftGeomUtils.geom(elem.toShape().Edges[0], sketch.Placement))
@@ -386,14 +394,11 @@ class EaglePCB(mathFunctions):
     ##############################
     # MAIN FUNCTIONS
     ##############################
-    def setProject(self):
-        self.projektBRD = minidom.parse(self.fileName)
-
+    
     def getGlue(self, layerNumber):
         glue = {}
         # line/arc
-        for i in self.getWires(self.projektBRD.getElementsByTagName("plain")[0], [layerNumber]):
-            
+        for i in self.getWires(self.projektBRD.getElementsByTagName("plain")[0], [layerNumber[0]]):
             if not i['width'] in glue.keys():
                 glue[i['width']] = []
             
@@ -402,7 +407,7 @@ class EaglePCB(mathFunctions):
             else:
                 glue[i['width']].append(['arc', i['x2'], i['y2'], i['x1'], i['y1'], i['curve'], i['cap']])
         # circle
-        for i in self.getCircles(self.projektBRD.getElementsByTagName("plain")[0], layerNumber):
+        for i in self.getCircles(self.projektBRD.getElementsByTagName("plain")[0], layerNumber[0]):
             if not i['width'] in glue.keys():
                 glue[i['width']] = []
             
@@ -642,8 +647,8 @@ class EaglePCB(mathFunctions):
         
         #return [signal, wiresDB]
         
-    def getPaths(self, layerNew, layerNumber):
-        self.addStandardShapes(self.projektBRD.getElementsByTagName("signals")[0], layerNew, [layerNumber])
+    def getPaths(self, layerNew, layerNumber, display=[True, True, True, False]):
+        self.addStandardShapes(self.projektBRD.getElementsByTagName("signals")[0], layerNew, [layerNumber[0]], display)
 
     def getSettings(self, paramName):
         for i in self.projektBRD.getElementsByTagName("param"):
@@ -909,7 +914,7 @@ class EaglePCB(mathFunctions):
                         layerNew.setFace()
 
     def getSilkLayer(self, layerNew, layerNumber, display=[True, True, True, True]):
-        self.addStandardShapes(self.projektBRD.getElementsByTagName("plain")[0], layerNew, [layerNumber], display)
+        self.addStandardShapes(self.projektBRD.getElementsByTagName("plain")[0], layerNew, [layerNumber[0]], display)
         
     def getSilkLayerModels(self, layerNew, layerNumber):
         self.getLibraries()
@@ -918,14 +923,14 @@ class EaglePCB(mathFunctions):
         for i in self.elements:
             if i['side'] == 0:  # bottom side - get mirror
                 try:
-                    if softLayers[self.databaseType][layerNumber]["mirrorLayer"]:
-                        szukanaWarstwa = softLayers[self.databaseType][layerNumber]["mirrorLayer"]
+                    if softLayers[self.databaseType][layerNumber[0]]["mirrorLayer"]:
+                        szukanaWarstwa = softLayers[self.databaseType][layerNumber[0]]["mirrorLayer"]
                     else:
-                        szukanaWarstwa = layerNumber
+                        szukanaWarstwa = layerNumber[0]
                 except:
-                    szukanaWarstwa = layerNumber
+                    szukanaWarstwa = layerNumber[0]
             else:
-                szukanaWarstwa = layerNumber
+                szukanaWarstwa = layerNumber[0]
             ####
             self.addStandardShapes(self.libraries[i['library']][i['package']], layerNew, [szukanaWarstwa], parent=i)
         

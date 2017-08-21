@@ -38,7 +38,6 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, backref
 
 import FreeCAD
-from PCBfunctions import getFromSettings_databasePath
 
 __currentPath__ = os.path.abspath(os.path.join(os.path.dirname(__file__), ''))
 __scriptVersion__ = 5.0
@@ -268,18 +267,23 @@ class dataBase:
         FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetFloat("Version", __scriptVersion__)
         return True
         
-    def connect(self):
+    def connect(self, newPath=False):
         ''' '''
         try:
-            engine = create_engine('sqlite:///{0}'.format(getFromSettings_databasePath()))  # relative path
+            if newPath:
+                engine = create_engine('sqlite:///{0}'.format(newPath))
+            else:
+                from PCBfunctions import getFromSettings_databasePath
+                
+                engine = create_engine('sqlite:///{0}'.format(getFromSettings_databasePath()))  # relative path
             Base.metadata.create_all(engine)
             Session = sessionmaker(bind=engine)
             self.session = Session()
             
-            if not self.checkVersion():
+            if not newPath and not self.checkVersion():
                 self.cfg2db()
             
-            FreeCAD.Console.PrintWarning("Read database")
+            FreeCAD.Console.PrintWarning("Read database\n")
         except Exception, e:
             return False
         return True
@@ -319,7 +323,7 @@ class dataBase:
                 result[i] = j
         return result
         
-    def findPackage(self, name, software):
+    def findPackage(self, name, software, returnAll=False):
         try:
             name = self.clearString(name).strip()
             software = self.clearString(software).strip()
@@ -332,7 +336,10 @@ class dataBase:
             if query.count() == 0:
                 return False
             
-            return query[0]
+            if returnAll:
+                return query
+            else:
+                return query[0]
         except Exception, e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (findPackage).\n".format(self.errorsDescription(e)))
             return False
@@ -441,6 +448,9 @@ class dataBase:
         except Exception, e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (get all sockets).\n".format(self.errorsDescription(e)))
             return []
+    
+    def getAllModels(self):
+        return self.session.query(Models)
 
     def getAllModelsByCategory(self, categoryID):
         return self.session.query(Models).filter(Models.categoryID == categoryID)
@@ -472,7 +482,7 @@ class dataBase:
         try:
             modelID = int(modelID)
             
-            self.session.query(Models).filter(Models.sockedID == modelID).update({"sockedID" : 0, "socketIDSocket" : False})
+            self.session.query(Models).filter(Models.socketID == modelID).update({"socketID" : 0, "socketIDSocket" : False})
             self.session.query(Packages).filter(Packages.modelID == modelID).delete()
             self.session.query(Models).filter(Models.id == modelID).delete()
             self.session.commit()
@@ -510,15 +520,21 @@ class dataBase:
             
             for i in data["software"]:
                 if i['blanked']:
-                    if int(i['id']) == -1:
-                        continue
-                    else:  # del package
-                        self.deletePackage(int(i['id']))
-                else:
-                    if int(i['id']) != -1:  # update package
-                        self.updatePackage(int(i['id']), i)
-                    else:  # add package
-                        self.addPackage(i, modelName=name)
+                    continue
+                else: # add new package
+                    self.addPackage(i, modelName=name)
+                
+                #if i['blanked']:
+                    #if int(i['id']) == -1:
+                        #continue
+                    #else:  # del package
+                        #continue
+                        ## self.deletePackage(int(i['id']))
+                #else:
+                    #if int(i['id']) != -1:  # update package
+                        #self.updatePackage(int(i['id']), i)
+                    #else:  # add package
+                        #self.addPackage(i, modelName=name)
             
         except Exception, e:
             self.session.rollback()

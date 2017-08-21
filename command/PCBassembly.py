@@ -273,7 +273,7 @@ class childAssemblyObject:
         #
         self.rotZ = 0
         self.rotX = 0
-        self.rotY = 0 # side
+        self.rotY = 0
         self.offsetX = 0
         self.offsetY = 0
         self.offsetZ = 0
@@ -286,6 +286,10 @@ class childAssemblyObject:
 
     def updateRotation(self, obj, rot, center):
         try:
+            #FreeCAD.Console.PrintWarning("RX: {0}\n".format(self.rotX))
+            #FreeCAD.Console.PrintWarning("RY: {0}\n".format(self.rotY))
+            #FreeCAD.Console.PrintWarning("RZ: {0}\n\n\n".format(self.rotZ))
+            
             sX = -self.offsetX 
             sY = -self.offsetY
             sZ = -self.offsetZ
@@ -294,25 +298,28 @@ class childAssemblyObject:
             y = center[1] + self.offsetY
             z = center[2] + self.offsetZ
             
-            pla = FreeCAD.Placement(FreeCAD.Base.Vector(x, y, z), FreeCAD.Rotation(rot[0], rot[1], rot[2]), FreeCAD.Base.Vector(sX, sY, sZ))
+            rotX = rot[0]
+            rotY = rot[1]
+            rotZ = rot[2]
+            
+            pla = FreeCAD.Placement(FreeCAD.Base.Vector(x, y, z), FreeCAD.Rotation(rotX, rotY, rotZ), FreeCAD.Base.Vector(sX, sY, sZ))
             obj.Placement = pla
             
-            # rotate object -> ROT property; Z value
+            # rotate object
             rot = FreeCAD.Rotation(FreeCAD.Vector(0,0,1), self.rotZ)
             pos = FreeCAD.Base.Vector(0, 0, 0)
             nP = FreeCAD.Placement(pos, rot, pos)
             obj.Placement = obj.Placement.multiply(nP)
-            # change side
+            
             rot = FreeCAD.Rotation(FreeCAD.Vector(0,1,0), self.rotY)
             pos = FreeCAD.Base.Vector(0, 0, 0)
             nP = FreeCAD.Placement(pos, rot, pos)
             obj.Placement = obj.Placement.multiply(nP)
-            #
+            
             rot = FreeCAD.Rotation(FreeCAD.Vector(1,0,0), self.rotX)
             pos = FreeCAD.Base.Vector(0, 0, 0)
             nP = FreeCAD.Placement(pos, rot, pos)
             obj.Placement = obj.Placement.multiply(nP)
-            
         except Exception, e:
             pass
             #FreeCAD.Console.PrintWarning("rot. {0} \n".format(e))
@@ -391,10 +398,11 @@ class mainAssemblyObject:
                         viewProviderChildAssemblyObject(child.ViewObject)
                         child.ViewObject.DiffuseColor = i.ViewObject.DiffuseColor
                         
+                        #FreeCAD.Console.PrintWarning("rot: {0}\n\n\n".format(i.Placement.Rotation.toEuler()))
+                        
                         child.Proxy.rotZ = i.Placement.Rotation.toEuler()[0]
                         child.Proxy.rotY = i.Placement.Rotation.toEuler()[1]
                         child.Proxy.rotX = i.Placement.Rotation.toEuler()[2]
-                        
                         #
                         obj.addObject(child)
                         child.Proxy.offsetX = child.Placement.Base.x - self.center[0]

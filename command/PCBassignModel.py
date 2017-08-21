@@ -33,7 +33,7 @@ import sys
 #
 from PCBdataBase import dataBase
 from PCBconf import supSoftware, defSoftware, partPaths
-from PCBfunctions import getFromSettings_databasePath, kolorWarstwy, prepareScriptCopy
+from PCBfunctions import getFromSettings_databasePath, kolorWarstwy, prepareScriptCopy, importScriptCopy, configParserRead, configParserWrite
 from PCBcategories import addCategoryGui, removeCategoryGui, updateCategoryGui, setOneCategoryGui
 from PCBpartManaging import partExistPath
 
@@ -700,18 +700,54 @@ class dodajElement(QtGui.QDialog):
         mainLayLeftSide.addWidget(self.modelsList, 1, 1, 1, 1)
         
         # main layout
-        splitter = QtGui.QSplitter()
-        splitter.setChildrenCollapsible(False)
-        splitter.addWidget(mainWidgetLeftSide)
-        splitter.addWidget(self.mainWidgetRightSide())
+        self.splitter = QtGui.QSplitter()
+        self.splitter.setChildrenCollapsible(False)
+        self.splitter.addWidget(mainWidgetLeftSide)
+        self.splitter.addWidget(self.mainWidgetRightSide())
         
         mainLay = QtGui.QHBoxLayout()
-        mainLay.addWidget(splitter)
+        mainLay.addWidget(self.splitter)
         mainLay.setContentsMargins(0, 0, 0, 0)
         self.setLayout(mainLay)
         #
         self.reloadList()
+        self.readSize()
+        
+    def readSize(self):
+        data = configParserRead('assignWindow')
+        if data:
+            try:
+                x = int(data['window_x'])
+                y = int(data['window_y'])
+                w = int(data['window_w'])
+                h = int(data['window_h'])
+                self.splitter.setSizes(eval(data['window_splitter']))
+                self.modelsList.setColumnWidth(0, int(data['window_modellist']))
+                
+                self.setGeometry(x, y, w, h)
+            except Exception, e:
+                FreeCAD.Console.PrintWarning(u"{0} \n".format(e))
     
+    def closeEvent(self, event):
+        data = {}
+        data['window_x'] = self.x()
+        data['window_y'] = self.y()
+        data['window_w'] = self.width()
+        data['window_h'] = self.height()
+        data['window_splitter'] = self.splitter.sizes()
+        data['window_modellist'] = self.modelsList.columnWidth(0)
+        
+        configParserWrite('assignWindow', data)
+        ###########
+        event.accept()
+    
+    def importDatabase(self):
+        try:
+            dial = importScriptCopy()
+            dial.exec_()
+        except Exception, e:
+            FreeCAD.Console.PrintWarning(u"Error: {0} \n".format(e))
+
     def prepareCopy(self):
         try:
             dial = prepareScriptCopy()
@@ -1395,6 +1431,13 @@ class dodajElement(QtGui.QDialog):
         modelsListSaveCopy.setFlat(True)
         self.connect(modelsListSaveCopy, QtCore.SIGNAL("clicked ()"), self.prepareCopy)
         
+        modelsListImportDatabase = QtGui.QPushButton("")
+        #modelsListImportDatabase.setCursor(QtGui.QCursor(QtCore.Qt.PointingHandCursor))
+        modelsListImportDatabase.setIcon(QtGui.QIcon(":/data/img/databaseUpload.png"))
+        modelsListImportDatabase.setToolTip(u"Import database")
+        modelsListImportDatabase.setFlat(True)
+        self.connect(modelsListImportDatabase, QtCore.SIGNAL("clicked ()"), self.importDatabase)
+        
         ########################
         # models list
         ########################
@@ -1460,6 +1503,7 @@ class dodajElement(QtGui.QDialog):
         mainLayLeftSide.addWidget(separator())
         mainLayLeftSide.addWidget(modelsListReload)
         mainLayLeftSide.addWidget(modelsListSaveCopy)
+        mainLayLeftSide.addWidget(modelsListImportDatabase)
         mainLayLeftSide.addWidget(separator())
         mainLayLeftSide.addWidget(self.removeModel)
         mainLayLeftSide.addWidget(self.setOneCategoryForModels)

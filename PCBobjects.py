@@ -1175,7 +1175,7 @@ class layerSilkObject(objectWire):
     def __init__(self, obj, typeL):
         #obj.addProperty("App::PropertyLinkSub", "Holes", "Holes", "Reference to volume of part").Holes = (FreeCAD.ActiveDocument.Board, 'Holes')
         self.spisObiektow = []
-        self.Type = typeL
+        self.Type = ['layer'] + typeL
         obj.Proxy = self
         self.holes = False
         self.cutToBoard = False
@@ -2038,13 +2038,16 @@ class layerSilkObject(objectWire):
         #self.generuj(fp)
         
     def __getstate__(self):
-        return [self.Type, self.cutToBoard, self.spisObiektowTXT, self.defHeight]
+        return [self.Type, self.cutToBoard, self.defHeight, self.holes, self.side]
+        #return [self.Type, self.cutToBoard, self.spisObiektowTXT, self.defHeight, self.holes, self.side]
         
     def __setstate__(self, state):
         self.Type = state[0]
         self.cutToBoard = state[1]
-        self.spisObiektowTXT = state[2]
-        self.defHeight = state[3]
+        self.defHeight = state[2]
+        self.holes = state[3]
+        self.side = state[4]
+        #self.spisObiektowTXT = eval(state[5])
 
 
 class viewProviderLayerSilkObject:

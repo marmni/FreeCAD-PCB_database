@@ -39,7 +39,7 @@ import unicodedata
 #
 import PCBconf
 from PCBpartManaging import partsManaging
-from PCBfunctions import kolorWarstwy, mathFunctions, getFromSettings_Color_1
+from PCBfunctions import kolorWarstwy, mathFunctions, getFromSettings_Color_1, configParserRead, configParserWrite
 from PCBobjects import layerPolygonObject, viewProviderLayerPolygonObject, layerPathObject, viewProviderLayerPathObject, constraintAreaObject, viewProviderConstraintAreaObject
 from PCBboard import PCBboardObject, viewProviderPCBboardObject
 from command.PCBgroups import *
@@ -228,6 +228,41 @@ class dialogMAIN_FORM(QtGui.QDialog):
         self.lay.setColumnMinimumWidth(2, 200)
         self.lay.setColumnMinimumWidth(3, 120)
         self.setLayout(self.lay)
+        self.readSize()
+    
+    def readSize(self):
+        data = configParserRead('openWindow')
+        if data:
+            try:
+                x = int(data['window_x'])
+                y = int(data['window_y'])
+                w = int(data['window_w'])
+                h = int(data['window_h'])
+                
+                self.setGeometry(x, y, w, h)
+            except Exception, e:
+                FreeCAD.Console.PrintWarning(u"{0} \n".format(e))
+    
+    def closeEvent(self, event):
+        data = {}
+        data['window_x'] = self.x()
+        data['window_y'] = self.y()
+        data['window_w'] = self.width()
+        data['window_h'] = self.height()
+        
+        configParserWrite('openWindow', data)
+        ###########
+        event.accept()
+        
+    #def reject(self):
+        ##dialSize = QtCore.QByteArray()
+        ##value = freecadSettings.GetString("pcbSettingsDialGeometry", "01d9d0cb0001000000000000000000000000027f000001df00000000000000000000027f000001df000000000000")
+        
+        ##dialSize.fromHex(eval(value))
+        ##self.restoreGeometry(dialSize)
+        #FreeCAD.Console.PrintWarning("test")
+        
+        #return True
         
     def selectAllCategories(self):
         if self.spisWarstw.rowCount() > 0:
@@ -254,8 +289,8 @@ class dialogMAIN_FORM(QtGui.QDialog):
                 layerValue = PCBconf.softLayers[self.databaseType][layerID]["value"]
                 layerSide = [PCBconf.softLayers[self.databaseType][layerID]["side"], True]  # [layer side, block drop down list TRUE/FALSE]
             else:
-                if j['color'] in PCBconf.eagleColorsDefinition:
-                    layerColor = PCBconf.eagleColorsDefinition[j['color']]
+                if j['color']:
+                    layerColor = j['color']
                 else:
                     layerColor = getFromSettings_Color_1('', 4294967295)
                 

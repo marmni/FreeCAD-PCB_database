@@ -133,13 +133,13 @@ class moveParts(partsManaging):
         
     def readLibs(self):
         ''' read all available libs from selected model '''
-        modelData = self.__SQL__.convertToTable(self.__SQL__.getModelByName(self.updateModel)[1])
-        modelData = self.__SQL__.packagesDataToDictionary(modelData)
+        modelData = self.__SQL__.findPackage(self.updateModel, software='*', returnAll=True)
         #
         self.form.listaBibliotek.clear()
-        for i in modelData['software']:
-            self.form.listaBibliotek.addItem(u"{1} ({0})".format(i['name'], i['software']))
-            self.form.listaBibliotek.setItemData(self.form.listaBibliotek.count() - 1, i['id'], QtCore.Qt.UserRole)
+        for i in modelData:
+            data = self.__SQL__.convertToTable(i)
+            self.form.listaBibliotek.addItem(u"{1} ({0})".format(data['name'], data['software']))
+            self.form.listaBibliotek.setItemData(self.form.listaBibliotek.count() - 1, data['id'], QtCore.Qt.UserRole)
         #
         self.form.listaBibliotek.setCurrentIndex(0)
 
