@@ -229,7 +229,8 @@ class EaglePCB(mathFunctions):
                         if attr.getAttribute('value').strip() == "":
                             FreeCAD.Console.PrintWarning(u"Empty attribute 'FREECAD' found for the element {0}. Default package will be used.\n".format(name))
                         else:
-                            if self.partExist(['', attr.getAttribute('value').strip()], '')[0]:
+                            #if self.partExist(['', attr.getAttribute('value').strip()], '')[0]:
+                            if self.parent.partExist(['', attr.getAttribute('value').strip()], '')[0]:
                                 FreeCAD.Console.PrintWarning(u"Package '{1}' will be used for the element {0} (instead of {2}).\n".format(name, attr.getAttribute('value').strip(), package))
                                 freecad_package = attr.getAttribute('value').strip()
                             else:
