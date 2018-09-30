@@ -34,13 +34,14 @@ import DraftGeomUtils
 import Draft
 import Part
 import os
-import __builtin__
+import builtins
+import importlib
 import unicodedata
 #
 import PCBconf
 from PCBpartManaging import partsManaging
 from PCBfunctions import kolorWarstwy, mathFunctions, getFromSettings_Color_1, configParserRead, configParserWrite
-from PCBobjects import layerPolygonObject, viewProviderLayerPolygonObject, layerPathObject, viewProviderLayerPathObject, constraintAreaObject, viewProviderConstraintAreaObject
+from PCBobjects import layerPolygonObject, viewProviderLayerPolygonObject, layerPathObject, constraintAreaObject, viewProviderConstraintAreaObject
 from PCBboard import PCBboardObject, viewProviderPCBboardObject
 from command.PCBgroups import *
 from command.PCBannotations import createAnnotation
@@ -49,7 +50,7 @@ from command.PCBglue import createGlue
 
 class dialogMAIN_FORM(QtGui.QDialog):
     def __init__(self, filename=None, parent=None):
-        reload(PCBconf)
+        importlib.reload(PCBconf)
         
         QtGui.QDialog.__init__(self, parent)
         freecadSettings = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB")
@@ -240,7 +241,7 @@ class dialogMAIN_FORM(QtGui.QDialog):
                 h = int(data['window_h'])
                 
                 self.setGeometry(x, y, w, h)
-            except Exception, e:
+            except Exception as e:
                 FreeCAD.Console.PrintWarning(u"{0} \n".format(e))
     
     def closeEvent(self, event):

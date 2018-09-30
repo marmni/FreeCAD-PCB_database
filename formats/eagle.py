@@ -28,13 +28,13 @@
 import FreeCAD
 import re
 from xml.dom import minidom
-import __builtin__
+import builtins
 import DraftGeomUtils
 import Draft
 #
 from PCBconf import PCBlayers, softLayers
 from PCBobjects import *
-from dialogMAIN_FORM import dialogMAIN_FORM
+from formats.dialogMAIN_FORM import dialogMAIN_FORM
 from command.PCBgroups import *
 from PCBfunctions import mathFunctions
 from PCBconf import eagleColorsDefinition
@@ -146,7 +146,7 @@ class EaglePCB(mathFunctions):
         
         for i in self.getWires(dane, 20):
             if not i['curve']:
-                borderObject.addGeometry(Part.Line(FreeCAD.Vector(i['x1'], i['y1'], 0), FreeCAD.Vector(i['x2'], i['y2'], 0)))
+                borderObject.addGeometry(Part.LineSegment(FreeCAD.Vector(i['x1'], i['y1'], 0), FreeCAD.Vector(i['x2'], i['y2'], 0)))
             else:
                 [x3, y3] = self.arcMidPoint([i['x1'], i['y1']], [i['x2'], i['y2']], i['curve'])
                 arc = Part.Arc(FreeCAD.Vector(i['x2'], i['y2'], 0.0), FreeCAD.Vector(x3, y3, 0.0), FreeCAD.Vector(i['x1'], i['y1'], 0.0))
@@ -170,7 +170,7 @@ class EaglePCB(mathFunctions):
                     x2 = self.odbijWspolrzedne(x2, i['x'])
                 
                 if not j['curve']:
-                    borderObject.addGeometry(Part.Line(FreeCAD.Vector(x1, y1, 0), FreeCAD.Vector(x2, y2, 0)))
+                    borderObject.addGeometry(Part.LineSegment(FreeCAD.Vector(x1, y1, 0), FreeCAD.Vector(x2, y2, 0)))
                 else:
                     curve = j['curve']
                     if i['side'] == 0:

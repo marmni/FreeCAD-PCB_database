@@ -56,7 +56,7 @@ spisKolorowSTP = {
 #*                                                                          *
 #*                                                                          *
 #****************************************************************************
-#  categories fo models for assign window
+#  def. categories fo models for assign window
 modelsCategories = {
         1: ['Capacitors', ''],
         2: ['Resistors', ''],

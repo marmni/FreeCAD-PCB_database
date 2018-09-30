@@ -34,14 +34,14 @@ import DraftGeomUtils
 import Draft
 import Part
 import os
-import __builtin__
+import builtins
 import unicodedata
 import time
 #
 import PCBconf
 from PCBpartManaging import partsManaging
 from PCBfunctions import kolorWarstwy, mathFunctions, getFromSettings_Color_1
-from PCBobjects import layerPolygonObject, viewProviderLayerPolygonObject, layerPathObject, viewProviderLayerPathObject, constraintAreaObject, viewProviderConstraintAreaObject
+from PCBobjects import layerPolygonObject, viewProviderLayerPolygonObject, layerPathObject, constraintAreaObject, viewProviderConstraintAreaObject
 from PCBboard import PCBboardObject, viewProviderPCBboardObject
 from command.PCBgroups import *
 from command.PCBannotations import createAnnotation
@@ -114,7 +114,8 @@ class mainPCB(partsManaging):
             else:
                 FreeCAD.Console.PrintMessage(str(data))
             
-            QtGui.qApp.processEvents()
+            #QtGui.qApp.processEvents()
+            QtGui.QApplication.processEvents()
     
     def generate(self, doc, groupBRD):
         self.printInfo('\nInitializing')
@@ -159,7 +160,7 @@ class mainPCB(partsManaging):
                         self.generateGlue(doc, grp, layerName, layerColor, layerNumber, layerSide)
                     elif layerFunction == "constraint":
                         self.generateConstraintAreas(doc, layerNumber, grp, layerName, layerColor, layerTransp)
-                except Exception, e:
+                except Exception as e:
                     self.printInfo('{0}'.format(e), 'error')
                 else:
                     self.printInfo('done')
@@ -176,7 +177,7 @@ class mainPCB(partsManaging):
         
             if self.wersjaFormatu.dialogMAIN.plytkaPCB_plikER.isChecked() and result[0] == 'Error':
                 partNameTXT = partNameTXT_label = self.generateNewLabel(i[0][0])
-                if isinstance(partNameTXT, unicode):
+                if isinstance(partNameTXT, str):
                     partNameTXT = unicodedata.normalize('NFKD', partNameTXT).encode('ascii', 'ignore')
                 
                 #errors.append([partNameTXT, i['package'], i['value'], i['library']])
@@ -194,7 +195,7 @@ class mainPCB(partsManaging):
             ser.ViewObject.Visibility = False
             for k in j:
                 if k[0] == 'line':
-                    ser.addGeometry(Part.Line(FreeCAD.Vector(k[1], k[2], 0), FreeCAD.Vector(k[3], k[4], 0)))
+                    ser.addGeometry(Part.LineSegment(FreeCAD.Vector(k[1], k[2], 0), FreeCAD.Vector(k[3], k[4], 0)))
                 elif k[0] == 'circle':
                     ser.addGeometry(Part.Circle(FreeCAD.Vector(k[1], k[2]), FreeCAD.Vector(0, 0, 1), k[3]))
                 elif k[0] == 'arc':
@@ -268,7 +269,9 @@ class mainPCB(partsManaging):
         layerS.ViewObject.ShapeColor = layerColor
         grp.addObject(layerS)
         #
+        #
         doc.recompute()
+        #FreeCADGui.activeDocument().getObject(layerS.Name).DisplayMode = 1
 
     def generatePCB(self, doc, groupBRD, gruboscPlytki):
         self.printInfo('\nGenerate board: ')
@@ -288,7 +291,7 @@ class mainPCB(partsManaging):
             FreeCADGui.activeDocument().getObject(PCBboard.Name).ShapeColor = PCBconf.PCB_COLOR
             FreeCADGui.activeDocument().PCB_Border.Visibility = False
             self.updateView()
-        except Exception, e:
+        except Exception as e:
             self.printInfo(u'{0}'.format(e), 'error')
         else:
             self.printInfo('done')
@@ -306,7 +309,7 @@ class mainPCB(partsManaging):
             #
             doc.Board.Holes = doc.PCB_Holes
             doc.recompute()
-        except Exception, e:
+        except Exception as e:
             self.printInfo(u'{0}'.format(e), 'error')
         else:
             self.printInfo('done')
@@ -354,10 +357,10 @@ class mainPCB(partsManaging):
                 except:
                     pass
                 
-                ser.addGeometry(Part.Line(FreeCAD.Vector(x1, y1, 0), FreeCAD.Vector(x2, y2, 0)))
-                ser.addGeometry(Part.Line(FreeCAD.Vector(x2, y2, 0), FreeCAD.Vector(x3, y3, 0)))
-                ser.addGeometry(Part.Line(FreeCAD.Vector(x3, y3, 0), FreeCAD.Vector(x4, y4, 0)))
-                ser.addGeometry(Part.Line(FreeCAD.Vector(x4, y4, 0), FreeCAD.Vector(x1, y1, 0)))
+                ser.addGeometry(Part.LineSegment(FreeCAD.Vector(x1, y1, 0), FreeCAD.Vector(x2, y2, 0)))
+                ser.addGeometry(Part.LineSegment(FreeCAD.Vector(x2, y2, 0), FreeCAD.Vector(x3, y3, 0)))
+                ser.addGeometry(Part.LineSegment(FreeCAD.Vector(x3, y3, 0), FreeCAD.Vector(x4, y4, 0)))
+                ser.addGeometry(Part.LineSegment(FreeCAD.Vector(x4, y4, 0), FreeCAD.Vector(x1, y1, 0)))
             elif i[0] == 'circle':
                 try:
                     height = i[5]
@@ -377,7 +380,7 @@ class mainPCB(partsManaging):
                 
                 for j in i[1]:
                     if j[0] == 'Line':
-                        ser.addGeometry(Part.Line(FreeCAD.Vector(j[1], j[2], 0), FreeCAD.Vector(j[3], j[4], 0)))
+                        ser.addGeometry(Part.LineSegment(FreeCAD.Vector(j[1], j[2], 0), FreeCAD.Vector(j[3], j[4], 0)))
                     elif j[0] == 'Arc':
                         x1 = j[1]
                         y1 = j[2]
@@ -461,7 +464,7 @@ class mainPCB(partsManaging):
         if PCB_ER and len(PCB_ER):
             if os.path.exists(filename) and os.path.isfile(filename):
                 (path, docname) = os.path.splitext(os.path.basename(filename))
-                plik = __builtin__.open(u"{0}.err".format(filename), "w")
+                plik = builtins.open(u"{0}.err".format(filename), "w")
                 a = []
                 a = [i for i in PCB_ER if str(i) not in a and not a.append(str(i))]
                 PCB_ER = list(a)

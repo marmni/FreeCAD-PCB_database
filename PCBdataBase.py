@@ -26,7 +26,7 @@
 #****************************************************************************
 import os.path
 import shutil
-import ConfigParser
+import configparser
 import json
 from PySide import QtCore, QtGui
 from sqlalchemy.ext.declarative import declarative_base
@@ -36,11 +36,11 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.engine import reflection
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship, backref
+import PCBcheckFreeCADVersion
 
 import FreeCAD
 
 __currentPath__ = os.path.abspath(os.path.join(os.path.dirname(__file__), ''))
-__scriptVersion__ = 5.0
 Base = declarative_base()
 
 class Categories(Base):
@@ -115,17 +115,17 @@ class Packages(Base):
         self.rz = rz
     
     def __repr__(self):
-        return "<Packages('%s','%s')>" % (self.name)
+        return "<Packages('%s')>" % (self.name)
 
 
 class dataBase_CFG():
     def __init__(self, parent=None):
-        self.config = ConfigParser.RawConfigParser()
+        self.config = configparser.RawConfigParser()
         self.fileName = None
     
     def read(self, fileName):
         if fileName != "":
-            #self.config = ConfigParser.RawConfigParser()
+            #self.config = configparser.RawConfigParser()
             sciezka = os.path.dirname(fileName)
             if os.access(sciezka, os.R_OK) and os.access(sciezka, os.F_OK):
                 self.fileName = fileName
@@ -154,16 +154,7 @@ class dataBase:
         self.session = None
     
     def checkVersion(self):
-        version = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetFloat("Version", 0.0)
-        
-        if float(version) < __scriptVersion__:
-            dial = QtGui.QMessageBox()
-            dial.setText(u"Old database format detected - upgrading database format is required. This may take several seconds.")
-            dial.setWindowTitle("Caution!")
-            dial.setIcon(QtGui.QMessageBox.Question)
-            rewT = dial.addButton('Ok', QtGui.QMessageBox.YesRole)
-            dial.exec_()
-            
+        if not PCBcheckFreeCADVersion.checkdataBaseVersion():
             return False
         else:
             return True
@@ -173,7 +164,7 @@ class dataBase:
         try:
             dataBaseCFG = dataBase_CFG()  # old cfg file
             dataBaseCFG.read(getFromSettings_databasePath().replace(".db", ".cfg"))
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR cfg2db 1: {0}.\n".format(self.errorsDescription(e)))
             return False
         else:
@@ -257,14 +248,14 @@ class dataBase:
         try:
             data = getFromSettings_databasePath()
             shutil.move(data.replace(".db", ".cfg"), data.replace(".db", ".cfg") + "_old")
-        except Exception, e:
+        except Exception as e:
             pass
         
         ## deleting old categories
         #if FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").GetString("partsCategories", '').strip() != '':
             #FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetString('partsCategories', json.dumps(""))
         
-        FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetFloat("Version", __scriptVersion__)
+        FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/PCB").SetFloat("Version", __dataBaseVersion__)
         return True
         
     def connect(self, newPath=False):
@@ -284,7 +275,7 @@ class dataBase:
                 self.cfg2db()
             
             FreeCAD.Console.PrintWarning("Read database\n")
-        except Exception, e:
+        except Exception as e:
             return False
         return True
     
@@ -340,7 +331,7 @@ class dataBase:
                 return query
             else:
                 return query[0]
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (findPackage).\n".format(self.errorsDescription(e)))
             return False
             
@@ -372,7 +363,7 @@ class dataBase:
                 return []
             
             return query
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (get package).\n".format(self.errorsDescription(e)))
             return []
 
@@ -397,7 +388,7 @@ class dataBase:
             package = Packages(modelID, name, software, x, y, z, rx, ry, rz)
             self.session.add(package)
             self.session.commit()
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (add package).\n".format(e))
             return [False]
         
@@ -422,7 +413,7 @@ class dataBase:
              })
              
             self.session.commit()
-        except Exception, e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (update package).\n".format(self.errorsDescription(e)))
             return False
@@ -431,7 +422,7 @@ class dataBase:
         try:
             self.session.query(Packages).filter(Packages.id == int(packageID)).delete()
             self.session.commit()
-        except Exception, e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (delete package).\n".format(self.errorsDescription(e)))
             return False
@@ -445,7 +436,7 @@ class dataBase:
                 return []
             
             return query
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (get all sockets).\n".format(self.errorsDescription(e)))
             return []
     
@@ -462,7 +453,7 @@ class dataBase:
                 return [False]
             
             return [True, query[0]]
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (get model).\n".format(self.errorsDescription(e)))
             return [False]
 
@@ -474,7 +465,7 @@ class dataBase:
             
             return [True, query[0]]
             
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (get model).\n".format(self.errorsDescription(e)))
             return [False]
     
@@ -486,7 +477,7 @@ class dataBase:
             self.session.query(Packages).filter(Packages.modelID == modelID).delete()
             self.session.query(Models).filter(Models.id == modelID).delete()
             self.session.commit()
-        except Exception ,e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (delete model).\n".format(self.errorsDescription(e)))
             return False
@@ -536,7 +527,7 @@ class dataBase:
                     #else:  # add package
                         #self.addPackage(i, modelName=name)
             
-        except Exception, e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (add new model).\n".format(self.errorsDescription(e)))
             return False
@@ -556,7 +547,7 @@ class dataBase:
             })
             self.session.commit()
             
-        except Exception, e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (update model).\n".format(self.errorsDescription(e)))
             return False
@@ -603,7 +594,7 @@ class dataBase:
                     else:  # add package
                         self.addPackage(i, modelID=modelID)
             
-        except Exception, e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (update model).\n".format(self.errorsDescription(e)))
             return False
@@ -619,7 +610,7 @@ class dataBase:
             
             return [True, query[0]]
             
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0} (get category).\n".format(self.errorsDescription(e)))
             return [False]
     
@@ -663,7 +654,7 @@ class dataBase:
             
             self.session.query(Categories).filter(Categories.id == categoryID).delete()
             self.session.commit()
-        except Exception, e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (delete category).\n".format(self.errorsDescription(e)))
             return False
@@ -686,7 +677,7 @@ class dataBase:
             
             self.session.query(Categories).filter(Categories.id == categoryID).update({"name": name, "parentID" : parentID, "description" : description})
             self.session.commit()
-        except Exception, e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (update category).\n".format(self.errorsDescription(e)))
             return False
@@ -709,7 +700,7 @@ class dataBase:
             categories = Categories(name, parentID, description)
             self.session.add(categories)
             self.session.commit()
-        except Exception, e:
+        except Exception as e:
             self.session.rollback()
             FreeCAD.Console.PrintWarning("ERROR: {0} (add new category).\n".format(self.errorsDescription(e)))
             return False
@@ -721,7 +712,7 @@ class dataBase:
 
 #class dataBase:
     #def __init__(self, parent=None):
-        #self.config = ConfigParser.RawConfigParser()
+        #self.config = configparser.RawConfigParser()
         #self.fileName = None
     
     #def convertDatabaseEntries(self):
@@ -773,7 +764,7 @@ class dataBase:
         
     #def read(self, fileName):
         #if fileName != "":
-            ##self.config = ConfigParser.RawConfigParser()
+            ##self.config = configparser.RawConfigParser()
             #sciezka = os.path.dirname(fileName)
             #if os.access(sciezka, os.R_OK) and os.access(sciezka, os.F_OK):
                 #self.fileName = fileName
@@ -782,10 +773,10 @@ class dataBase:
             #FreeCAD.Console.PrintWarning("Access Denied. The file '{0}' may not exist, or there could be permission problem.\n".format(fileName))
             
     #def create(self, fileName):
-        #plik = __builtin__.open(fileName, "w")
+        #plik = builtins.open(fileName, "w")
         #plik.close()
         #self.fileName = fileName
-        ##self.config = ConfigParser.RawConfigParser()
+        ##self.config = configparser.RawConfigParser()
         #self.config.read(fileName)
         
     #def write(self):
@@ -992,12 +983,12 @@ class dataBase:
                         #models.appendChild(model)
                     
                     ## write to file
-                    #outputFile = __builtin__.open(os.path.join(newFolder, 'freecad-pcb_copy.fpcb'), 'w')
+                    #outputFile = builtins.open(os.path.join(newFolder, 'freecad-pcb_copy.fpcb'), 'w')
                     #xml.writexml(outputFile)
                     #outputFile.close()
-                #except Exception, e:
+                #except Exception as e:
                     #FreeCAD.Console.PrintWarning(u"{0} \n".format(e))
-        #except Exception, e:
+        #except Exception as e:
             #FreeCAD.Console.PrintWarning(u"{0} \n".format(e))
     
     #def readFromXML(self):
@@ -1099,7 +1090,7 @@ class dataBase:
                         #self.updatePackage(sectionID, dane)
                 
                 #return True
-        #except Exception ,e:
+        #except Exception as e:
             #FreeCAD.Console.PrintWarning("{0} \n".format(e))
         
         #return False

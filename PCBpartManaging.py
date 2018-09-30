@@ -30,7 +30,7 @@ import FreeCADGui
 import Part
 import os
 import re
-import __builtin__
+import builtins
 import glob
 import unicodedata
 import ImportGui
@@ -84,7 +84,7 @@ class partsManaging(mathFunctions):
         colFile = os.path.join(os.path.dirname(filePath), os.path.splitext(os.path.basename(filePath))[0] + '.col')
         try:
             if os.path.exists(colFile):
-                colFileData = __builtin__.open(colFile, "r").readlines()
+                colFileData = builtins.open(colFile, "r").readlines()
                 header = colFileData[0].strip().split("|")
                 
                 if len(header) >= 2 and header[0] == "2" and str(os.path.getmtime(filePath)) == header[1]:  # col file version
@@ -100,10 +100,10 @@ class partsManaging(mathFunctions):
                     
                     if len(colFileData[2:]) > 20:
                         return step_model
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("{0} \n".format(e))
         ##
-        colFileData = __builtin__.open(colFile, "w")
+        colFileData = builtins.open(colFile, "w")
         colFileData.write("2|{0}\n".format(os.path.getmtime(filePath)))  # wersja|data
         
         FreeCAD.newDocument('importingPartsPCB')
@@ -127,7 +127,7 @@ class partsManaging(mathFunctions):
             
                 shape = FreeCAD.ActiveDocument.getObject("Union").Shape
                 col = FreeCAD.ActiveDocument.getObject("Union").ViewObject.DiffuseColor
-        except Exception,e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("{0} \n".format(e))
         
         #FreeCADGui.insert(u"{0}".format(filePath), "importingPartsPCB")
@@ -159,11 +159,11 @@ class partsManaging(mathFunctions):
         
         # basic data
         partNameTXT = partNameTXT_label = self.generateNewLabel(newPart[0][0])
-        if isinstance(partNameTXT, unicode):
+        if isinstance(partNameTXT, str):
             partNameTXT = unicodedata.normalize('NFKD', partNameTXT).encode('ascii', 'ignore')
         #
         partValueTXT = newPart[0][2]
-        #if isinstance(partValueTXT, unicode):
+        #if isinstance(partValueTXT, str):
             #partValueTXT = unicodedata.normalize('NFKD', partValueTXT).encode('ascii', 'ignore')
         partRotation = self.adjustRotation(newPart[0][5])  # rotation around Z
         # check if 3D model exist
@@ -387,7 +387,7 @@ class partsManaging(mathFunctions):
                 annotationName.Color = (1., 1., 1.)
                 annotationName.Visibility = newPart[1][10]
             
-            annotationName.generate()
+            #annotationName.generate()
             #################################################################
             # part value
             # [txt, x, y, size, rot, side, align, spin, mirror, font]
@@ -430,7 +430,7 @@ class partsManaging(mathFunctions):
                 annotationValue.Color = (1., 1., 1.)
                 annotationValue.Visibility = newPart[2][10]
             
-            annotationValue.generate()
+            #annotationValue.generate()
             #
             step_model.PartName = annotationName.Annotation
             step_model.PartValue = annotationValue.Annotation
@@ -491,7 +491,7 @@ class partsManaging(mathFunctions):
             annotationName.Mirror = newPart[1][8]
             annotationName.Visibility = newPart[1][10]
             annotationName.Color = (1., 1., 1.)
-            annotationName.generate()
+            #annotationName.generate()
             # part value
             # [txt, x, y, size, rot, side, align, spin, mirror, font]
             annotationValue = createAnnotation()
@@ -509,7 +509,7 @@ class partsManaging(mathFunctions):
             annotationValue.Mirror = newPart[2][8]
             annotationValue.Visibility = newPart[2][10]
             annotationValue.Color = (1., 1., 1.)
-            annotationValue.generate()
+            #annotationValue.generate()
             #
             step_model.PartName = annotationName.Annotation
             step_model.PartValue = annotationValue.Annotation
@@ -530,7 +530,7 @@ class partsManaging(mathFunctions):
     def addPartToGroup(self, groupParts, categoryID, step_model):
         try:
             FreeCAD.ActiveDocument.removeObject(step_model.InList[0].Label)
-        except Exception, e:
+        except Exception as e:
             pass
         
         try:
@@ -547,7 +547,7 @@ class partsManaging(mathFunctions):
                 else:
                     categoryData = self.__SQL__.getCategoryByID(int(categoryID))
                     if categoryData:
-                        grp_2 = makeGroup(self.__SQL__.convertToTable(categoryData)['name'])
+                        grp_2 = makeGroup(categoryData.name)
                     else:
                         grp_2 = makeGroup('Others')
             except:
@@ -638,7 +638,7 @@ class partsManaging(mathFunctions):
         #return FreeCAD.Base.Rotation(x, y, z, w)
         
     def generateNewLabel(self, label):
-        #if isinstance(label, unicode):
+        #if isinstance(label, str):
             #label = unicodedata.normalize('NFKD', label).encode('ascii', 'ignore')
         
         if label.strip() == "":
@@ -658,7 +658,7 @@ class partsManaging(mathFunctions):
             #
             colFile = os.path.join(os.path.dirname(filePath), os.path.splitext(os.path.basename(filePath))[0] + '.col')
             if os.path.exists(colFile):
-                colFileData = __builtin__.open(colFile, "r").readlines()
+                colFileData = builtins.open(colFile, "r").readlines()
                 header = colFileData[0].strip().split("|")
                 
                 if len(header) >= 2 and header[0] == "2" and str(os.path.getmtime(filePath)) == header[1]:  # col file version
@@ -670,10 +670,10 @@ class partsManaging(mathFunctions):
                     except:
                         pass
             
-            colFileData = __builtin__.open(colFile, "w")
+            colFileData = builtins.open(colFile, "w")
             colFileData.write("{0}\n".format(os.path.getmtime(filePath)))
             #
-            plik = __builtin__.open(filePath, "r").read().replace('\r\n', '').replace('\r', '').replace('\\n', '').replace('\n', '')
+            plik = builtins.open(filePath, "r").read().replace('\r\n', '').replace('\r', '').replace('\\n', '').replace('\n', '')
             paletaKolorow = []
             # v2
             defColors = {}
@@ -713,7 +713,7 @@ class partsManaging(mathFunctions):
             self.objColors[filePath] = paletaKolorow
             colFileData.write(str(paletaKolorow))
             colFileData.close()
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"Error 1b: {0} \n".format(e))
         return step_model
 
@@ -730,7 +730,7 @@ class partsManaging(mathFunctions):
             #
             colFile = os.path.join(os.path.dirname(filePath), os.path.splitext(os.path.basename(filePath))[0] + '.col')
             if os.path.exists(colFile):
-                colFileData = __builtin__.open(colFile, "r").readlines()
+                colFileData = builtins.open(colFile, "r").readlines()
                 header = colFileData[0].strip().split("|")
                 
                 if len(header) >= 2 and header[0] == "2" and str(os.path.getmtime(filePath)) == header[1]:  # col file version
@@ -742,10 +742,10 @@ class partsManaging(mathFunctions):
                     except:
                         pass
             
-            colFileData = __builtin__.open(colFile, "w")
+            colFileData = builtins.open(colFile, "w")
             colFileData.write("{0}\n".format(os.path.getmtime(filePath)))
             #
-            plik = __builtin__.open(filePath, "r").readlines()
+            plik = builtins.open(filePath, "r").readlines()
             
             stopka = plik[-1]  # stopka okresla ile lini zawiera naglowek oraz poszczegolne czesci pliku
             dlugoscSTART = int(re.search('S.*G', stopka).group(0)[1:-1])  # S = Start Sender comments
@@ -862,7 +862,7 @@ class partsManaging(mathFunctions):
             self.objColors[filePath] = paletaKolorow
             colFileData.write(str(paletaKolorow))
             colFileData.close()
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"Error 1a: {0} \n".format(e))
         
         return step_model
@@ -928,7 +928,7 @@ class partsManaging(mathFunctions):
                     filePos = modelData["path3DModels"]
                     
                     # multi models definition for one part
-                    if isinstance(model, unicode):
+                    if isinstance(model, str):
                         model = unicodedata.normalize('NFKD', model).encode('ascii', 'ignore')
                         #if len(filePos.split(';')) > 1:
                         #return [False]
@@ -952,7 +952,7 @@ class partsManaging(mathFunctions):
                 else:
                     return [False]
             return [False]
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"Error partExist(): {0} \n".format(e))
             return [False]
             #FreeCAD.Console.PrintWarning(u"Error 2: {0} \n".format(e))

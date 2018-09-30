@@ -117,7 +117,7 @@ class partObject(partsObject):
             for i in fp.OutList:
                 i.X = self.odbijWspolrzedne(i.X.Value, fp.X.Value)
                 i.Proxy.reverseSide(i)
-        except Exception, e:
+        except Exception as e:
             #FreeCAD.Console.PrintWarning("4. {0}\n".format(e))
             pass
 
@@ -133,7 +133,7 @@ class partObject(partsObject):
                     fp.Placement.Base.z = fp.Placement.Base.z - (fp.Socket.Value - self.oldSocket)
                 
                 self.oldSocket = fp.Socket.Value
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("{0} \n".format(e))
         
         
@@ -155,7 +155,7 @@ class partObject(partsObject):
                 i.X = fp.X.Value - (self.oldX - i.X.Value)
                 
             self.oldX = fp.X.Value
-        except Exception, e:
+        except Exception as e:
             #FreeCAD.Console.PrintWarning("1. {0}\n".format(e))
             pass
             
@@ -168,7 +168,7 @@ class partObject(partsObject):
                 i.Y = fp.Y.Value - (self.oldY - i.Y.Value)
 
             self.oldY = fp.Y.Value
-        except Exception, e:
+        except Exception as e:
             #FreeCAD.Console.PrintWarning("2. {0}\n".format(e))
             pass
         
@@ -229,7 +229,7 @@ class partObject(partsObject):
                 
                 #fp.Placement.Base.z = fp.Placement.Base.z + socketH
                 #self.updatePosition_Z(fp, getPCBheight()[1])
-        except Exception, e:
+        except Exception as e:
             #FreeCAD.Console.PrintWarning("3. {0}\n".format(e))
             pass
 
@@ -353,7 +353,7 @@ class viewProviderPartObject:
         #***************************************************************
         return '''
 /* XPM */
-static char * C:\Users\mariusz\Desktop\logo_xpm[] = {
+static char * C:\\Users\\mariusz\\Desktop\\logo_xpm[] = {
 "62 40 12 1",
 " 	c None",
 ".	c #717171",
@@ -407,7 +407,7 @@ static char * C:\Users\mariusz\Desktop\logo_xpm[] = {
 "                                                              ",
 "                                                              ",
 "                                                              "};
-            '''
+'''
 
 
 class viewProviderPartObject_E:
@@ -483,7 +483,7 @@ class viewProviderPartObject_E:
         #***************************************************************
         return """
 /* XPM */
-static char * C:\Users\mariusz\Downloads\Desktop\logo2_xpm[] = {
+static char * C:\\Users\\mariusz\\Downloads\\Desktop\\logo2_xpm[] = {
 "62 40 9 1",
 " 	c None",
 ".	c #717171",
@@ -571,8 +571,8 @@ class objectWire(mathFunctions):
             wir.append(Part.Arc(FreeCAD.Base.Vector(xT_4, yT_4, 0), FreeCAD.Base.Vector(xT_6, yT_6, 0), FreeCAD.Base.Vector(xT_5, yT_5, 0)))
             ##
             if cap == 'flat':
-                wir.append(Part.Line(FreeCAD.Base.Vector(xT_1, yT_1, 0), FreeCAD.Base.Vector(xT_4, yT_4, 0)))
-                wir.append(Part.Line(FreeCAD.Base.Vector(xT_2, yT_2, 0), FreeCAD.Base.Vector(xT_5, yT_5, 0)))
+                wir.append(Part.LineSegment(FreeCAD.Base.Vector(xT_1, yT_1, 0), FreeCAD.Base.Vector(xT_4, yT_4, 0)))
+                wir.append(Part.LineSegment(FreeCAD.Base.Vector(xT_2, yT_2, 0), FreeCAD.Base.Vector(xT_5, yT_5, 0)))
             else:
                 #wir.append(Part.Line(FreeCAD.Base.Vector(xT_1, yT_1, 0), FreeCAD.Base.Vector(xT_4, yT_4, 0)))
                 #wir.append(Part.Line(FreeCAD.Base.Vector(xT_2, yT_2, 0), FreeCAD.Base.Vector(xT_5, yT_5, 0)))
@@ -800,7 +800,7 @@ class objectWire(mathFunctions):
             ###mainObj = [Part.Arc(FreeCAD.Base.Vector(p1[0], p1[1], 0), FreeCAD.Base.Vector(x3, y3, 0), FreeCAD.Base.Vector(p2[0], p2[1], 0)).toShape()]
             ###return Part.Wire(mainObj)
 
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"{0}\n".format(e))
 
         
@@ -824,8 +824,8 @@ class objectWire(mathFunctions):
         
         # create wire
         wir = []
-        wir.append(Part.Line(FreeCAD.Base.Vector(0 - r, 0, 0), FreeCAD.Base.Vector(0 - r, dlugosc, 0)))
-        wir.append(Part.Line(FreeCAD.Base.Vector(0 + r, 0, 0), FreeCAD.Base.Vector(0 + r, dlugosc, 0)))
+        wir.append(Part.LineSegment(FreeCAD.Base.Vector(0 - r, 0, 0), FreeCAD.Base.Vector(0 - r, dlugosc, 0)))
+        wir.append(Part.LineSegment(FreeCAD.Base.Vector(0 + r, 0, 0), FreeCAD.Base.Vector(0 + r, dlugosc, 0)))
 
         p1 = [0 - r, 0]
         p2 = [0, 0 - r]
@@ -1099,74 +1099,74 @@ class layerPathObject(objectWire):
         self.generuj(fp)
 
 
-class viewProviderLayerPathObject:
-    def __init__(self, obj):
-        ''' Set this object to the proxy object of the actual view provider '''
-        obj.Proxy = self
+#class viewProviderLayerPathObject:
+    #def __init__(self, obj):
+        #''' Set this object to the proxy object of the actual view provider '''
+        #obj.Proxy = self
         
-    def attach(self, obj):
-        ''' Setup the scene sub-graph of the view provider, this method is mandatory '''
-        return
+    #def attach(self, obj):
+        #''' Setup the scene sub-graph of the view provider, this method is mandatory '''
+        #return
 
-    def updateData(self, fp, prop):
-        ''' If a property of the handled feature has changed we have the chance to handle this here '''
-        return
+    #def updateData(self, fp, prop):
+        #''' If a property of the handled feature has changed we have the chance to handle this here '''
+        #return
 
-    def getDisplayModes(self, obj):
-        ''' Return a list of display modes. '''
-        modes = []
-        return modes
+    #def getDisplayModes(self, obj):
+        #''' Return a list of display modes. '''
+        #modes = []
+        #return modes
 
-    def getDefaultDisplayMode(self):
-        ''' Return the name of the default display mode. It must be defined in getDisplayModes. '''
-        return "Wire Frame"
+    #def getDefaultDisplayMode(self):
+        #''' Return the name of the default display mode. It must be defined in getDisplayModes. '''
+        #return "Wire Frame"
 
-    def setDisplayMode(self, mode):
-        ''' Map the display mode defined in attach with those defined in getDisplayModes.
-        Since they have the same names nothing needs to be done. This method is optinal.
-        '''
-        return mode
+    #def setDisplayMode(self, mode):
+        #''' Map the display mode defined in attach with those defined in getDisplayModes.
+        #Since they have the same names nothing needs to be done. This method is optinal.
+        #'''
+        #return mode
 
-    def onChanged(self, vp, prop):
-        vp.setEditorMode("LineColor", 2)
-        vp.setEditorMode("DrawStyle", 2)
-        vp.setEditorMode("LineWidth", 2)
-        vp.setEditorMode("PointColor", 2)
-        vp.setEditorMode("PointSize", 2)
-        vp.setEditorMode("Deviation", 2)
-        vp.setEditorMode("Lighting", 2)
-        vp.setEditorMode("Transparency", 2)
-        vp.setEditorMode("BoundingBox", 2)
-        if hasattr(vp, "AngularDeflection"):
-            vp.setEditorMode("AngularDeflection", 2)
+    #def onChanged(self, vp, prop):
+        #vp.setEditorMode("LineColor", 2)
+        #vp.setEditorMode("DrawStyle", 2)
+        #vp.setEditorMode("LineWidth", 2)
+        #vp.setEditorMode("PointColor", 2)
+        #vp.setEditorMode("PointSize", 2)
+        #vp.setEditorMode("Deviation", 2)
+        #vp.setEditorMode("Lighting", 2)
+        #vp.setEditorMode("Transparency", 2)
+        #vp.setEditorMode("BoundingBox", 2)
+        #if hasattr(vp, "AngularDeflection"):
+            #vp.setEditorMode("AngularDeflection", 2)
         
-        if prop == "ShapeColor":
-            vp.LineColor = vp.ShapeColor
-            vp.PointColor = vp.ShapeColor
+        #if prop == "ShapeColor":
+            #vp.LineColor = vp.ShapeColor
+            #vp.PointColor = vp.ShapeColor
 
-    def getIcon(self):
-        ''' Return the icon in XMP format which will appear in the tree view. This method is optional
-        and if not defined a default icon is shown.
-        '''
-        #***************************************************************
-        #   Author:     Gentleface custom icons design agency (http://www.gentleface.com/)
-        #   License:    Creative Commons Attribution-Noncommercial 3.0
-        #   Iconset:    Mono Icon Set
-        #***************************************************************
-        return ":/data/img/layers_TI.svg"
+    #def getIcon(self):
+        #''' Return the icon in XMP format which will appear in the tree view. This method is optional
+        #and if not defined a default icon is shown.
+        #'''
+        ##***************************************************************
+        ##   Author:     Gentleface custom icons design agency (http://www.gentleface.com/)
+        ##   License:    Creative Commons Attribution-Noncommercial 3.0
+        ##   Iconset:    Mono Icon Set
+        ##***************************************************************
+        #return ":/data/img/layers_TI.svg"
 
-    def __getstate__(self):
-        ''' When saving the document this object gets stored using Python's cPickle module.
-        Since we have some un-pickable here -- the Coin stuff -- we must define this method
-        to return a tuple of all pickable objects or None.
-        '''
-        return None
+    #def __getstate__(self):
+        #''' When saving the document this object gets stored using Python's cPickle module.
+        #Since we have some un-pickable here -- the Coin stuff -- we must define this method
+        #to return a tuple of all pickable objects or None.
+        #'''
+        #return None
 
-    def __setstate__(self, state):
-        ''' When restoring the pickled object from document we have the chance to set some
-        internals here. Since no data were pickled nothing needs to be done here.
-        '''
-        return None
+    #def __setstate__(self, state):
+        #''' When restoring the pickled object from document we have the chance to set some
+        #internals here. Since no data were pickled nothing needs to be done here.
+        #'''
+        #return None
 #####################################
 #####################################
 #####################################
@@ -1281,14 +1281,12 @@ class layerSilkObject(objectWire):
             return Part.Ellipse(FreeCAD.Vector(x, y, 0), r1, r2)
         else:
             return Part.Ellipse(FreeCAD.Vector(x, y, 0), r2, r1)
-            
     
-
     def createLine2(self, x1, y1, x2, y2):
         if not [x1, y1] == [x2, y2]:
-            return Part.Line(FreeCAD.Base.Vector(x1, y1, 0), FreeCAD.Base.Vector(x2, y2, 0))
+            return Part.LineSegment(FreeCAD.Base.Vector(x1, y1, 0), FreeCAD.Base.Vector(x2, y2, 0))
         else:
-            return Part.Line(FreeCAD.Base.Vector(x1, y1, 0), FreeCAD.Base.Vector(x2 + 0.000001, y2 + 0.000001, 0))
+            return Part.LineSegment(FreeCAD.Base.Vector(x1, y1, 0), FreeCAD.Base.Vector(x2 + 0.000001, y2 + 0.000001, 0))
     
     def makePoint(self, x, y):
         return Part.Point(FreeCAD.Base.Vector(x, y, 0))
@@ -1404,20 +1402,9 @@ class layerSilkObject(objectWire):
                     #data = board.common(data)
             pads = Part.makeCompound(self.spisObiektowTXT)
             pads = pads.extrude(FreeCAD.Base.Vector(0, 0, self.defHeight / 1000.))
-                
-            
             
             pads.Placement.Base.z = fp.Placement.Base.z
             fp.Shape = pads
-            
-                
-        
-        
-        
-        
-        
-        
-        
         
         #if len(self.spisObiektowTXT):
             #if 'tSilk' in self.Type or 'bSilk' in self.Type or 'tDocu' in self.Type or 'bDocu' in self.Type or 'PCBcenterDrill' in self.Type:
@@ -1459,7 +1446,7 @@ class layerSilkObject(objectWire):
                             #pads = pads.cut(Part.makeCompound(holes))
                         #else:
                             #pads = pads
-                    #except Exception, e:
+                    #except Exception as e:
                         #FreeCAD.Console.PrintWarning("{0} \n".format(e))
                 
                 ## cut to board shape
@@ -1734,12 +1721,12 @@ class layerSilkObject(objectWire):
                 
                 object_4 = self.createArc3P([xT_2, yT_2], [xT_8, yT_8], [xT_5, yT_5])
             #
-            mainObj = Part.Shape([object_1, object_2, object_3, object_4])
+            mainObj = Part.Shape([object_1, object_3, object_2, object_4])
             mainObj = Part.Wire(mainObj.Edges)
             self.spisObiektowTXT.append(mainObj)
             #self.addPlacement([x1, y1, 0], kat, [0, 0, 0])
             #return mainObj
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"{0}\n".format(e))
     
     def addLineWidth(self, x1, y1, x2, y2, width=0, style=''):
@@ -1786,11 +1773,10 @@ class layerSilkObject(objectWire):
         #self.addPlacement([x1, y1, 0], kat, [0, 0, 0])
         
         #
-        mainObj = Part.Shape([line_1, line_2, arc_1, arc_2])
+        mainObj = Part.Shape([line_1,  arc_1, line_2,arc_2])
         mainObj = Part.Wire(mainObj.Edges)
         self.spisObiektowTXT.append(mainObj)
         self.addPlacement([x1, y1, 0], kat, [0, 0, 0])
-        
         #return mainObj
 
     #def addObject(self, mainObj):
@@ -2063,20 +2049,8 @@ class viewProviderLayerSilkObject:
         ''' If a property of the handled feature has changed we have the chance to handle this here '''
         return
 
-    def getDisplayModes(self, obj):
-        ''' Return a list of display modes. '''
-        modes = []
-        return modes
-
     def getDefaultDisplayMode(self):
-        ''' Return the name of the default display mode. It must be defined in getDisplayModes. '''
-        return "Wire Frame"
-
-    def setDisplayMode(self, mode):
-        ''' Map the display mode defined in attach with those defined in getDisplayModes.
-        Since they have the same names nothing needs to be done. This method is optinal.
-        '''
-        return mode
+        return "Shaded"
 
     def onChanged(self, vp, prop):
         vp.setEditorMode("LineColor", 2)

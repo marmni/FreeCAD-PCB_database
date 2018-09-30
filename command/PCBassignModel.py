@@ -248,7 +248,7 @@ class addNewPath(QtGui.QDialog):
                 self.pathChooser.setRootIndex(self.pathChooser.model().index('/'))
             else:
                 self.pathChooser.setRootIndex(self.pathChooser.model().index(value))
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("{0} \n".format(e))
             
     def setNewPath(self, path):
@@ -725,7 +725,7 @@ class dodajElement(QtGui.QDialog):
                 self.modelsList.setColumnWidth(0, int(data['window_modellist']))
                 
                 self.setGeometry(x, y, w, h)
-            except Exception, e:
+            except Exception as e:
                 FreeCAD.Console.PrintWarning(u"{0} \n".format(e))
     
     def closeEvent(self, event):
@@ -745,14 +745,14 @@ class dodajElement(QtGui.QDialog):
         try:
             dial = importScriptCopy()
             dial.exec_()
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"Error: {0} \n".format(e))
 
     def prepareCopy(self):
         try:
             dial = prepareScriptCopy()
             dial.exec_()
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"Error: {0} \n".format(e))
 
     def clearData(self):
@@ -784,7 +784,7 @@ class dodajElement(QtGui.QDialog):
                    "socketIDSocket" : self.boxAddSocket.isChecked(),
                    "software" : self.modelSettings.getData()
                    }
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("{0} \n".format(e))
     
     def addModelAsNew(self):
@@ -840,7 +840,7 @@ class dodajElement(QtGui.QDialog):
                     item.setCheckState(0, QtCore.Qt.Unchecked)
                 
                 self.reloadList()
-        except Exception ,e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("Error1: {0} \n".format(e))
 
     def deleteModel(self):
@@ -879,7 +879,7 @@ class dodajElement(QtGui.QDialog):
                 item.setCheckState(0, QtCore.Qt.Unchecked)
                 item.setHidden(True)
             ##########
-        except Exception ,e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("Error1: {0} \n".format(e))
 
     def addNewModel(self):
@@ -956,7 +956,7 @@ class dodajElement(QtGui.QDialog):
             #
             self.boxSetAsSocketa.setChecked(model["isSocket"])
             self.socketHeight.setValue(model["isSocketHeight"])
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"showData(): {0} \n".format(e))
         
         #try:
@@ -969,7 +969,7 @@ class dodajElement(QtGui.QDialog):
         #for i in soft:
             #try:
                 #self.modelSettings.addRow(i)
-            #except Exception, e:
+            #except Exception as e:
                 #FreeCAD.Console.PrintWarning("{0} \n".format(e))
         
     def resetSetAsSocket(self, value):
@@ -1110,7 +1110,7 @@ class dodajElement(QtGui.QDialog):
                     modelData = self.sql.convertToTable(dane[1])
                     modelData = self.sql.packagesDataToDictionary(modelData)
                     self.showData(modelData)
-            except Exception, e:
+            except Exception as e:
                 FreeCAD.Console.PrintWarning("ERROR: {0}.\n".format(e))
 
     def reloadCategoryList(self):
@@ -1146,7 +1146,7 @@ class dodajElement(QtGui.QDialog):
             
             if data:
                 self.wyszukajObiekty(data)
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning(u"Error 6: {0} \n".format(e))
     
     def checkSockets(self, tabID):
@@ -1163,7 +1163,7 @@ class dodajElement(QtGui.QDialog):
                 socket = self.sql.convertToTable(i)
                 self.socketModelName.addItem(socket['name'])
                 self.socketModelName.setItemData(self.socketModelName.count() - 1, socket['id'], QtCore.Qt.UserRole)
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0}.\n".format(e))
         
     ##########################
@@ -1948,7 +1948,7 @@ class dodajElement(QtGui.QDialog):
                 #self.modelsList.currentItem().setText(0, categoryData[0])
                 #self.modelsList.currentItem().setText(1, categoryData[1])
                 #self.reloadCategoryList()
-        #except Exception ,e:
+        #except Exception as e:
             #pass
     
     #def addCategoryF(self):
@@ -1962,7 +1962,7 @@ class dodajElement(QtGui.QDialog):
                 
                 #dial.addCategory()
                 #self.reloadList()
-        #except Exception ,e:
+        #except Exception as e:
             #pass
         
     #def removeCategoryF(self):
@@ -1970,7 +1970,7 @@ class dodajElement(QtGui.QDialog):
             #ID = int(self.modelsList.currentItem().data(0, QtCore.Qt.UserRole))
             #removeCategoryGui(ID)
             #self.reloadList()
-        #except Exception ,e:
+        #except Exception as e:
             #FreeCAD.Console.PrintWarning("{0} \n".format(e))
     
     #def deletePackage(self):
@@ -2009,7 +2009,7 @@ class dodajElement(QtGui.QDialog):
                 #item.setCheckState(0, QtCore.Qt.Unchecked)
                 #item.setHidden(True)
             ###########
-        #except Exception ,e:
+        #except Exception as e:
             #FreeCAD.Console.PrintWarning("{0} \n".format(e))
     
     #def resetSetAsSocket(self, value):
@@ -2188,7 +2188,7 @@ class dodajElement(QtGui.QDialog):
                         #j["path"] = i
                         #j['soft'] = str(j['soft'])
                         #self.sql.addPackage(j)
-                #except Exception, e:
+                #except Exception as e:
                     #FreeCAD.Console.PrintWarning(u"Error 5: {0} \n".format(e))
             ##
             #FreeCAD.Console.PrintWarning("Read database\n")
@@ -2228,7 +2228,7 @@ class dodajElement(QtGui.QDialog):
             #self.reloadCategoryList()
             ###
             #self.clearData()
-        #except Exception, e:
+        #except Exception as e:
             #FreeCAD.Console.PrintWarning(u"Error 6: {0} \n".format(e))
     
     #def loadData(self, item):
@@ -2288,7 +2288,7 @@ class dodajElement(QtGui.QDialog):
         #for i in soft:
             #try:
                 #self.modelSettings.addRow(i)
-            #except Exception, e:
+            #except Exception as e:
                 #FreeCAD.Console.PrintWarning("{0} \n".format(e))
 
     #def wyszukajObiektyNext(self):

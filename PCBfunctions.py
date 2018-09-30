@@ -31,7 +31,7 @@ from PySide import QtCore, QtGui
 import os
 import time
 from shutil import copy2, make_archive, rmtree
-import ConfigParser
+import configparser
 import glob
 import zipfile
 import tempfile
@@ -42,12 +42,12 @@ from PCBdataBase import dataBase
 __currentPath__ = os.path.abspath(os.path.join(os.path.dirname(__file__), ''))
 
 ########################################################################
-## configParser
+## configparser
 ########################################################################
 
 def configParserRead(sectionName):
     try:
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.read(os.path.join(__currentPath__, 'PCBsettings.cfg'))
         
         if sectionName in config.sections():
@@ -57,12 +57,12 @@ def configParserRead(sectionName):
             return dane
         else:
             return False
-    except Exception, e:
+    except Exception as e:
         FreeCAD.Console.PrintWarning(u"Error: {0} \n".format(e))
 
 def configParserWrite(sectionName, data):
     try:
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.read(os.path.join(__currentPath__, 'PCBsettings.cfg'))
         
         if not sectionName in config.sections():
@@ -74,7 +74,7 @@ def configParserWrite(sectionName, data):
         with open(os.path.join(__currentPath__, 'PCBsettings.cfg'), 'wb') as configfile:
             config.write(configfile)
         
-    except Exception, e:
+    except Exception as e:
         FreeCAD.Console.PrintWarning(u"Error: {0} \n".format(e))
 
 ########################################################################
@@ -309,7 +309,7 @@ class importScriptCopy(QtGui.QDialog):
                     self.modelsTable.setFirstItemColumnSpanned(mainItem, True)
                     
                     categories[oldCategoryID] = mainItem
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("ERROR: {0}.\n".format(e))
         #
         return categories
@@ -452,7 +452,7 @@ class importScriptCopy(QtGui.QDialog):
                 self.tabs.setTabEnabled(0, True)
                 self.tabs.setTabEnabled(1, True)
                 self.loadCategories()
-            except Exception, e:
+            except Exception as e:
                 FreeCAD.Console.PrintWarning("\nERROR: {0}.\n".format(e))
     
     def loadModels(self):
@@ -523,7 +523,7 @@ class importScriptCopy(QtGui.QDialog):
                         categories[data['categoryID']].addChild(mainModel)
                     except:  # 
                         categories[-1].addChild(mainModel)  # models without category
-        except Exception, e:
+        except Exception as e:
             pass
             
     def clearCategories(self):
@@ -593,7 +593,7 @@ class importScriptCopy(QtGui.QDialog):
             else:
                 FreeCAD.Console.PrintWarning("\nIncorrect file format!\n")
                 return False
-        except Exception, e:
+        except Exception as e:
             FreeCAD.Console.PrintWarning("\nERROR: {0} (checkFile).\n".format(e))
             return False
         
@@ -747,7 +747,7 @@ class prepareScriptCopy(QtGui.QDialog):
             self.printInfo("<br><span style='color:rgb(0, 0, 0);'>Removing tmp files:&nbsp;</span>")
             rmtree(mainPath)  # del tmp directory
             self.printInfo("<span style='color:rgb(0, 255, 0);'>done</span>")
-        except Exception, e:
+        except Exception as e:
             self.printInfo("<br><span style='color:rgb(255, 0, 0);'>Error: {0}!</span>".format(e))
             return False
         

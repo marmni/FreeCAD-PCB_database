@@ -27,7 +27,7 @@
 
 import FreeCAD
 import Sketcher
-import __builtin__
+import builtins
 import Part
 import re
 from math import sqrt
@@ -37,13 +37,13 @@ from PCBconf import PCBlayers, softLayers
 from PCBobjects import *
 from formats.PCBmainForms import *
 from command.PCBgroups import *
-from dialogMAIN_FORM import dialogMAIN_FORM
+from formats.dialogMAIN_FORM import dialogMAIN_FORM
 from PCBfunctions import mathFunctions
 from PCBconf import kicadColorsDefinition
 
 
 def setProjectFile(filename):
-    projektBRD = __builtin__.open(filename, "r").read()[1:]
+    projektBRD = builtins.open(filename, "r").read()[1:]
     wynik = ''
     licznik = 0
     txt = ''
@@ -1006,7 +1006,7 @@ class KiCadv3_PCB(mathFunctions):
             ##
             #if wyn[0] == 'Error':  # lista brakujacych elementow
                 #partNameTXT = partNameTXT_label = self.generateNewLabel(EL_Name[0])
-                #if isinstance(partNameTXT, unicode):
+                #if isinstance(partNameTXT, str):
                     #partNameTXT = unicodedata.normalize('NFKD', partNameTXT).encode('ascii', 'ignore')
                 
                 #PCB_ER.append([partNameTXT, package, EL_Value[0], library])
